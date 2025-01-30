@@ -1,4 +1,5 @@
 # Capstone Project for Computer Science
+**Links:** [Github](https://github.com/csk2q/Capstone/) | [Jira](https://directdepositcapstone.atlassian.net/jira/software/projects/DDC/boards/1?selectedIssue=DDC-3)   
 This repository is for a budgeting web app, created for as a part of our capstone project in computer science.
 
 ## Project structure
