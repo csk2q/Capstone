@@ -27,8 +27,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // SignIn stuff?
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+builder.Services.AddIdentityCore<ApplicationUser>(options =>{
+    options.SignIn.RequireConfirmedAccount = true;
+    }).AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
@@ -36,7 +37,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 // TODO Configure IdentityNoOpEmailSender to a reall mail thing?
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-// Configure sign in options (does not work?)
+// Configure sign in options. Also configured on the log in page
 builder.Services.Configure<IdentityOptions>(options =>
 {
     // TODO replace these settings for secure values
@@ -71,9 +72,6 @@ app.MapRazorComponents<App>()
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
-
-// TODO figure out more about these
-// I added these. Don't know if they are needed or not.
 app.UseAuthentication();
 app.UseAuthorization();
 
