@@ -75,7 +75,7 @@ namespace Microsoft.AspNetCore.Routing
             var downloadLogger = loggerFactory.CreateLogger("DownloadPersonalData");
 
             // Handles collecting personal data?
-            /*manageGroup.MapPost("/DownloadPersonalData", async (
+            manageGroup.MapPost("/DownloadPersonalData", async (
                 HttpContext context,
                 [FromServices] UserManager<ApplicationUser> userManager,
                 [FromServices] AuthenticationStateProvider authenticationStateProvider) =>
@@ -109,7 +109,7 @@ namespace Microsoft.AspNetCore.Routing
 
                 context.Response.Headers.TryAdd("Content-Disposition", "attachment; filename=PersonalData.json");
                 return TypedResults.File(fileBytes, contentType: "application/json", fileDownloadName: "PersonalData.json");
-            });*/
+            });
 
             return accountGroup;
         }
