@@ -1,0 +1,26 @@
+# 🛠 Ignore compiled & build files
+bin/
+obj/
+.vs/
+.vscode/
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# 🚫 Ignore user settings & local configs
+appsettings.Development.json
+Secrets.json
+.env
+launchSettings.json
+
+# 🔥 Ignore local environment settings
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 🚀 Ignore logs & temp files
+logs/
+*.log
+*.tmp
