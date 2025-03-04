@@ -8,10 +8,7 @@ EXPOSE 8080
 EXPOSE 8081
 
 # Start PostgreSQL before launching the Blazor app
-# FROM postgres:latest AS db
-# ENV POSTGRES_USER=myuser
-# ENV POSTGRES_PASSWORD=mypassword
-# ENV POSTGRES_DB=mydatabase
+FROM postgres:latest AS db
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -27,6 +24,10 @@ RUN dotnet build "./ServerBee.csproj" -c $BUILD_CONFIGURATION -o /app/build
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./ServerBee.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Make migration script (Would require installing ef-tools earlier in build)
+# RUN dotnet ef migrations script --idempotent -o "/app/publish/migration.sql"
+# Either manually generate SQL script and manually apply to database.
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
