@@ -7,7 +7,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Start PostgreSQL before launching the Blazor app
+# Include PostgreSQL in the image
 FROM postgres:latest AS db
 
 # This stage is used to build the service project
@@ -25,7 +25,7 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./ServerBee.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Make migration script (Would require installing ef-tools earlier in build)
+# Create migration script for inclusion (Would require installing ef-tools earlier in build)
 # RUN dotnet ef migrations script --idempotent -o "/app/publish/migration.sql"
 # Either manually generate SQL script and manually apply to database.
 
