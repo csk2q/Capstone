@@ -14,10 +14,10 @@ FROM postgres:latest AS db
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Blazor/ServerBee.csproj", "Blazor/"]
-RUN dotnet restore "./Blazor/ServerBee.csproj"
+COPY ["ServerBee/ServerBee.csproj", "ServerBee/"]
+RUN dotnet restore "./ServerBee/ServerBee.csproj"
 COPY . .
-WORKDIR "/src/Blazor"
+WORKDIR "/src/ServerBee"
 RUN dotnet build "./ServerBee.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
