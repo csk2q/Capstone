@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AIBudgetSimTesting.Models
+namespace ServerBee.AIBudgetSim.Models
 {
     public class AIResponse
     {

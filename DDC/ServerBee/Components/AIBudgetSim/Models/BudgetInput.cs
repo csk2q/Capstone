@@ -1,4 +1,4 @@
-namespace AIBudgetSimTesting.Models // ✅ Must match your project's namespace
+namespace ServerBee.AIBudgetSim.Models // ✅ Must match your project's namespace
 {
     public class BudgetInput
     {

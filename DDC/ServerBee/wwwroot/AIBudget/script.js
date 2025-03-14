@@ -20,7 +20,7 @@ document.getElementById("getAdvice").addEventListener("click", async function ()
 
         console.log("📤 Sending Request to API with body:", requestBody); // Debugging log
 
-        let response = await fetch("https://localhost:7130/api/budget-advice", {
+        let response = await fetch("/api/budget-advice", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(requestBody)

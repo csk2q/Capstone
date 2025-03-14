@@ -5,9 +5,9 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AIBudgetSimTesting.Models;
+using ServerBee.AIBudgetSim.Models;
 
-namespace AIBudgetSimTesting.Controllers
+namespace ServerBee.AIBudgetSim.Controllers
 {
     [ApiController]
     [Route("api/budget-advice")]
