@@ -38,8 +38,11 @@ public class EmailSender : IEmailSender<ApplicationUser>
     public async Task SendEmailAsync(string toEmail, string subject, string message)
     {
         if (string.IsNullOrEmpty(Options.SendGridKey))
-        {
-            throw new Exception("Null SendGridKey");
+        { 
+            Options.SendGridKey = Environment.GetEnvironmentVariable("SENDGRID_KEY");
+            
+            if (string.IsNullOrEmpty(Options.SendGridKey))
+                throw new Exception("Null SendGridKey");
         }
         await Execute(Options.SendGridKey, subject, message, toEmail);
     }
