@@ -1,8 +1,10 @@
 using ServerBee.Components;
 using ServerBee.Components.Account;
 using ServerBee.Data;
+using ServerBee.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,9 +38,11 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>{
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-// Mail?
-// TODO Configure IdentityNoOpEmailSender to a reall mail thing?
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+// Mail
+// builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+// builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddSingleton<IEmailSender<ApplicationUser>, EmailSender>();
+builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
 // Configure sign in options. Also configured on the log in page
 builder.Services.Configure<IdentityOptions>(options =>
