@@ -82,4 +82,25 @@ app.MapRazorComponents<App>()
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
+/* Apply database migrations on startup.
+ * Note that this is not recommended for production but can be useful for local development.
+ * It is recommended in production to generate SQL migration scripts and manually run them
+ * https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/applying?tabs=dotnet-core-cli
+ */
+if (app.Environment.IsDevelopment()
+    || Environment.GetEnvironmentVariable("MIGRATE_DB_ON_STARTUP")?.ToUpper() == "TRUE")
+    try
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await db.Database.MigrateAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("ERROR: Failed to migrate database.");
+        Console.Error.WriteLine(ex);
+    }
+
 app.Run();
