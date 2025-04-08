@@ -21,6 +21,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     # Can view using `docker exec -it blazor-postgres-1 psql -U myuser -d mydatabase` ?
 
+  ## EXPORT volume
+    # docker run --rm -v capstone_postgres_data:/volume -v $(pwd):/backup alpine \
+    # tar cf /backup/backup.tar -C /volume .
+
 
   # web interface for the database
   adminer:

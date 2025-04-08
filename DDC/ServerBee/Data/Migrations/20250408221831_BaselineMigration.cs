@@ -7,11 +7,27 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ServerBee.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class BaselineMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "account",
+                columns: table => new
+                {
+                    account_id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    account_number = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    account_type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    opening_balance = table.Column<decimal>(type: "numeric(15,2)", precision: 15, scale: 2, nullable: true),
+                    current_balance = table.Column<decimal>(type: "numeric(15,2)", precision: 15, scale: 2, nullable: true),
+                    customer_id = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -31,6 +47,7 @@ namespace ServerBee.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
+                    CustomerId = table.Column<int>(type: "integer", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -49,6 +66,83 @@ namespace ServerBee.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "credit_history",
+                columns: table => new
+                {
+                    credit_history_id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    customer_id = table.Column<int>(type: "integer", nullable: true),
+                    credit_score = table.Column<int>(type: "integer", nullable: true),
+                    credit_lines = table.Column<string>(type: "text", nullable: true),
+                    past_payment_history = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
+                name: "customer",
+                columns: table => new
+                {
+                    customer_id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    full_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    address = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    phone_number = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    email_address = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    date_of_birth = table.Column<DateOnly>(type: "date", nullable: true),
+                    ssn = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
+                name: "customer_credentials",
+                columns: table => new
+                {
+                    customer_id = table.Column<int>(type: "integer", nullable: false),
+                    username = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
+                name: "loan",
+                columns: table => new
+                {
+                    loan_id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    customer_id = table.Column<int>(type: "integer", nullable: true),
+                    loan_amount = table.Column<decimal>(type: "numeric(15,2)", precision: 15, scale: 2, nullable: true),
+                    interest_rate = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: true),
+                    repayment_schedule = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    collateral_details = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
+                name: "transaction",
+                columns: table => new
+                {
+                    transaction_id = table.Column<int>(type: "integer", nullable: false),
+                    account_id = table.Column<int>(type: "integer", nullable: true),
+                    date = table.Column<DateOnly>(type: "date", nullable: true),
+                    time = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    amount = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
+                    transaction_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    payee_payer_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    payee_payer_account_number = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true)
+                },
+                constraints: table =>
+                {
                 });
 
             migrationBuilder.CreateTable(
@@ -199,6 +293,9 @@ namespace ServerBee.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "account");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -212,6 +309,21 @@ namespace ServerBee.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "credit_history");
+
+            migrationBuilder.DropTable(
+                name: "customer");
+
+            migrationBuilder.DropTable(
+                name: "customer_credentials");
+
+            migrationBuilder.DropTable(
+                name: "loan");
+
+            migrationBuilder.DropTable(
+                name: "transaction");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
