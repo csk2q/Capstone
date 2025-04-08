@@ -56,6 +56,8 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 var app = builder.Build();
 
+var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger<Program>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -91,16 +93,18 @@ if (app.Environment.IsDevelopment()
     || Environment.GetEnvironmentVariable("MIGRATE_DB_ON_STARTUP")?.ToUpper() == "TRUE")
     try
     {
+        logger.LogInformation("Applying database migrations...");
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             await db.Database.MigrateAsync();
         }
+        logger.LogInformation("Finished applying database migrations.");
     }
     catch (Exception ex)
     {
-        Console.Error.WriteLine("ERROR: Failed to migrate database.");
-        Console.Error.WriteLine(ex);
+        
+        logger.LogError("Failed to migrate database.\n" + ex.Message, [ex]);
     }
 
 app.Run();
