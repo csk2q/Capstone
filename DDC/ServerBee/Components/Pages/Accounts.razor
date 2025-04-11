@@ -1,0 +1,36 @@
+﻿@page "/fetchdata"
+     <!-- TO DO PAGE NEEDS MATCHED HERE AS WELL,# ALL PAGES ON INTEGRATION -->
+
+<main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
+    <h1 style="color: #2e7d6d; margin-bottom: 1.5rem;">🏦 My Accounts</h1>
+
+    <section style="display: flex; flex-wrap: wrap; gap: 2rem;">
+        @foreach (var account in accounts)
+        {
+            <div style="@accountCardStyle">
+                <h2 style="margin: 0; color: #2e7d6d;">@account.Name</h2>
+                <p style="margin: 0.5rem 0;">Account #: ****@account.Last4</p>
+                <p style="font-size: 1.2rem; font-weight: bold;">Balance: @account.Balance.ToString("C")</p>
+            </div>
+        }
+    </section>
+</main>
+
+     <!--TO DO TO DO ADJUST FOR ACCOUNT CALLS -->
+@code {
+    private List<BankAccount> accounts = new()
+    {
+        new BankAccount("Checking", "4321", 135.00m),
+        new BankAccount("Savings", "6789", 500.00m),
+        new BankAccount("Vacation Fund", "9876", 1200.75m),
+        new BankAccount("Emergency", "2468", 3200.00m)
+    };
+
+    private record BankAccount(string Name, string Last4, decimal Balance);
+
+    private string accountCardStyle =>
+        "background: white; border-radius: 1rem; padding: 1.5rem; width: 280px;" +
+        "box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease;" +
+        "cursor: pointer;";
+
+}

@@ -1,0 +1,76 @@
+﻿@page "/"
+
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+
+<main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
+    <!-- Top Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div style="font-size: 1.75rem; font-weight: bold;">🌿Direct Deposit Bank</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1rem; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <img src="https://via.placeholder.com/30" alt="User Image" style="border-radius: 50%;" />
+            <span style="font-weight: 500;">@userName</span>
+        </div>
+    </div>
+ 
+    <!-- Account Balance Card //ToDO LINK ACTUAL BALANCE TO ACCOUNTS HERE-->
+    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="margin-top: 0; color: #2e7d6d;">💳 Balance </h2>
+
+        <label for="from-account" style="font-weight: 500;">From Account</label>
+        <select id="from-account" @bind="selectedAccount"
+                style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+        </select>
+
+        <ul style="list-style: none; padding-left: 0; font-size: 1.2rem;">
+            <li>Balance: <strong>@GetBalanceDisplay()</strong></li>
+        </ul>
+    </section>
+
+    <!-- Recent Transactions Card //TODO LINK TO TRANSACTIONS HERE-->
+    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: #2e7d6d;">📋 Recent Transactions</h3>
+
+        <ul style="list-style: none; padding-left: 0;">
+            @foreach (var txn in recentTransactions)
+            {
+                <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
+                    <span style="font-size: 1.3rem;">@txn.Emoji</span>
+                    <span style="margin-left: 0.5rem;">@txn.Description</span> –
+                    <strong>@txn.Amount.ToString("C")</strong>
+                </li>
+            }
+        </ul>
+    </section>
+</main>
+
+@code {
+    private string selectedAccount = "checking";
+    private string userName = "User";
+
+    private Dictionary<string, decimal> accountBalances = new()
+    {
+        { "checking", 135.00m },
+        { "savings", 500.00m }
+    };
+
+    private List<Transaction> recentTransactions = new()
+    {
+        new Transaction("🛒", "Grocery", 135.00m),
+        new Transaction("💵", "Deposit", 350.00m),
+        new Transaction("🏧", "ATM Withdrawal", 18.00m)
+    };
+
+    private string GetBalanceDisplay()
+    {
+        if (accountBalances.TryGetValue(selectedAccount, out var balance))
+        {
+            return balance.ToString("C");
+        }
+        return "$0.00";
+    }
+
+    private record Transaction(string Emoji, string Description, decimal Amount);
+}
