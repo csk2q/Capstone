@@ -8,8 +8,8 @@ This repository is for a budgeting web app, created for as a part of our capston
 **TODO** Update technology used.
 - ASP.NET - server & web hosting
 - PostgreSQL - Database
-- ??? - Frontend framework
-- ??? - AI component
+- Blazor CSS - Frontend framework
+- Open AI 4o and 4.5 LLM - AI component
 
 ### Directory Structure
 **TODO** Fill out once we start adding files.
