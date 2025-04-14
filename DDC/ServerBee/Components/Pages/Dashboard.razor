@@ -1,42 +1,52 @@
-﻿@page "/"
-
+@page "/"
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components
+@inject IJSRuntime JSRuntime
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <!-- Top Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div style="font-size: 1.75rem; font-weight: bold;">🌿Direct Deposit Bank</div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1rem; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="font-size: 1.75rem; font-weight: bold;" tabindex="0">🌿Direct Deposit Bank</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1rem; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+             tabindex="0">
             <img src="https://via.placeholder.com/30" alt="User Image" style="border-radius: 50%;" />
             <span style="font-weight: 500;">@userName</span>
         </div>
     </div>
  
     <!-- Account Balance Card //ToDO LINK ACTUAL BALANCE TO ACCOUNTS HERE-->
-    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem;"
+             tabindex="0" @onkeydown="HandleSectionKeyDown" @ref="balanceSection" id="balance-section">
         <h2 style="margin-top: 0; color: #2e7d6d;">💳 Balance </h2>
-
-        <label for="from-account" style="font-weight: 500;">From Account</label>
-        <select id="from-account" @bind="selectedAccount"
-                style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
-            <option value="checking">Checking</option>
-            <option value="savings">Savings</option>
-        </select>
-
+        <div style="display: flex; flex-direction: column;">
+            <label for="from-account" style="font-weight: 500;">From Account</label>
+            <select id="from-account" @bind="selectedAccount" @ref="accountSelect"
+                    @onkeydown="HandleSelectKeyDown"
+                    style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem; @(focusedElement == "select" ? "outline: 3px solid #2e7d6d;" : "")">
+                <option value="checking">Checking</option>
+                <option value="savings">Savings</option>
+            </select>
+        </div>
         <ul style="list-style: none; padding-left: 0; font-size: 1.2rem;">
             <li>Balance: <strong>@GetBalanceDisplay()</strong></li>
         </ul>
     </section>
-
+    
     <!-- Recent Transactions Card //TODO LINK TO TRANSACTIONS HERE-->
-    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+             tabindex="0" @onkeydown="HandleSectionKeyDown" @ref="transactionsSection" id="transactions-section">
         <h3 style="margin-top: 0; color: #2e7d6d;">📋 Recent Transactions</h3>
-
         <ul style="list-style: none; padding-left: 0;">
-            @foreach (var txn in recentTransactions)
+            @for (int i = 0; i < recentTransactions.Count; i++)
             {
-                <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
+                var txn = recentTransactions[i];
+                var index = i;
+                <li style="margin-bottom: 0.75rem; font-size: 1.1rem; padding: 0.5rem; border-radius: 0.5rem; @(focusedTransactionIndex == index ? "background-color: #f0f9f6; outline: 2px solid #2e7d6d;" : "")"
+                    tabindex="@(focusedElement == "transactions" && focusedTransactionIndex == index ? 0 : -1)"
+                    @ref="transactionRefs[i]"
+                    @onkeydown="(e) => HandleTransactionKeyDown(e, index)"
+                    @onclick="() => SelectTransaction(index)"
+                    id="transaction-@index">
                     <span style="font-size: 1.3rem;">@txn.Emoji</span>
                     <span style="margin-left: 0.5rem;">@txn.Description</span> –
                     <strong>@txn.Amount.ToString("C")</strong>
@@ -44,25 +54,63 @@
             }
         </ul>
     </section>
+
+    @if (showTransactionDetails && focusedTransactionIndex >= 0 && focusedTransactionIndex < recentTransactions.Count)
+    {
+        <div style="margin-top: 1rem; background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+             @ref="detailsPanel" tabindex="0" @onkeydown="HandleDetailsKeyDown">
+            <h3 style="color: #2e7d6d;">Transaction Details</h3>
+            <p><strong>Type:</strong> @recentTransactions[focusedTransactionIndex].Emoji @recentTransactions[focusedTransactionIndex].Description</p>
+            <p><strong>Amount:</strong> @recentTransactions[focusedTransactionIndex].Amount.ToString("C")</p>
+            <p><strong>Date:</strong> April 10, 2025</p>
+            <button @onclick="CloseTransactionDetails" 
+                    style="background: #2e7d6d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
+                Close
+            </button>
+        </div>
+    }
 </main>
 
 @code {
     private string selectedAccount = "checking";
     private string userName = "User";
-
     private Dictionary<string, decimal> accountBalances = new()
     {
         { "checking", 135.00m },
         { "savings", 500.00m }
     };
-
     private List<Transaction> recentTransactions = new()
     {
         new Transaction("🛒", "Grocery", 135.00m),
         new Transaction("💵", "Deposit", 350.00m),
         new Transaction("🏧", "ATM Withdrawal", 18.00m)
     };
-
+    
+    // Keyboard navigation properties
+    private ElementReference balanceSection;
+    private ElementReference transactionsSection;
+    private ElementReference accountSelect;
+    private ElementReference detailsPanel;
+    private ElementReference[] transactionRefs;
+    private string focusedElement = "";
+    private int focusedTransactionIndex = -1;
+    private bool showTransactionDetails = false;
+    
+    protected override void OnInitialized()
+    {
+        transactionRefs = new ElementReference[recentTransactions.Count];
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Set initial focus to the balance section
+            await balanceSection.FocusAsync();
+            focusedElement = "balance";
+        }
+    }
+    
     private string GetBalanceDisplay()
     {
         if (accountBalances.TryGetValue(selectedAccount, out var balance))
@@ -71,6 +119,158 @@
         }
         return "$0.00";
     }
-
+    
     private record Transaction(string Emoji, string Description, decimal Amount);
+    
+    private async Task HandleSectionKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Tab":
+                // Tab is handled by the browser
+                break;
+                
+            case "ArrowDown":
+                if (focusedElement == "balance")
+                {
+                    // Move focus to the account select dropdown
+                    focusedElement = "select";
+                    await accountSelect.FocusAsync();
+                }
+                else if (focusedElement == "transactions")
+                {
+                    // Move focus to the first transaction if not already focused
+                    if (focusedTransactionIndex == -1 && recentTransactions.Count > 0)
+                    {
+                        await SelectTransaction(0);
+                    }
+                }
+                break;
+                
+            case "Enter":
+            case " ": // Space key
+                if (focusedElement == "balance")
+                {
+                    // Focus the select dropdown when Enter is pressed on balance section
+                    focusedElement = "select";
+                    await accountSelect.FocusAsync();
+                }
+                else if (focusedElement == "transactions" && recentTransactions.Count > 0)
+                {
+                    // Select the first transaction if none is selected
+                    if (focusedTransactionIndex == -1)
+                    {
+                        await SelectTransaction(0);
+                    }
+                }
+                break;
+        }
+    }
+    
+    private async Task HandleSelectKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Tab":
+                // Tab is handled by the browser
+                break;
+                
+            case "Escape":
+                // Return focus to the balance section
+                focusedElement = "balance";
+                await balanceSection.FocusAsync();
+                break;
+                
+            case "ArrowDown":
+                if (!e.AltKey)
+                {
+                    // Let the default dropdown behavior handle this
+                    break;
+                }
+                // If Alt+ArrowDown, open the dropdown (default browser behavior)
+                break;
+                
+            case "ArrowUp":
+                // Move focus back to balance section
+                focusedElement = "balance";
+                await balanceSection.FocusAsync();
+                break;
+        }
+    }
+    
+    private async Task HandleTransactionKeyDown(KeyboardEventArgs e, int index)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                if (index < recentTransactions.Count - 1)
+                {
+                    await SelectTransaction(index + 1);
+                }
+                break;
+                
+            case "ArrowUp":
+                if (index > 0)
+                {
+                    await SelectTransaction(index - 1);
+                }
+                else
+                {
+                    // Move focus back to transactions section
+                    focusedElement = "transactions";
+                    focusedTransactionIndex = -1;
+                    await transactionsSection.FocusAsync();
+                }
+                break;
+                
+            case "Enter":
+            case " ": // Space key
+                // Show transaction details
+                focusedTransactionIndex = index;
+                showTransactionDetails = true;
+                StateHasChanged();
+                
+                // Focus the details panel
+                await Task.Delay(10); // Small delay to ensure element is rendered
+                await detailsPanel.FocusAsync();
+                break;
+                
+            case "Escape":
+                // Move focus back to transactions section
+                focusedElement = "transactions";
+                focusedTransactionIndex = -1;
+                await transactionsSection.FocusAsync();
+                break;
+        }
+    }
+    
+    private async Task HandleDetailsKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            CloseTransactionDetails();
+            await Task.Delay(10); // Small delay to ensure UI is updated
+            
+            // Return focus to the transaction that was selected
+            if (focusedTransactionIndex >= 0 && focusedTransactionIndex < recentTransactions.Count)
+            {
+                await transactionRefs[focusedTransactionIndex].FocusAsync();
+            }
+        }
+    }
+    
+    private async Task SelectTransaction(int index)
+    {
+        focusedElement = "transactions";
+        focusedTransactionIndex = index;
+        StateHasChanged();
+        
+        // Focus the selected transaction
+        await transactionRefs[index].FocusAsync();
+    }
+    
+    private void CloseTransactionDetails()
+    {
+        showTransactionDetails = false;
+    }
 }
