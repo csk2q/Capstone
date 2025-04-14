@@ -3,53 +3,52 @@
 @using Microsoft.AspNetCore.Components
 @inject IJSRuntime JSRuntime
 
-<main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
+<link rel="stylesheet" href="css/dashboard.css" />
+
+<main class="dashboard-main">
     <!-- Top Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div style="font-size: 1.75rem; font-weight: bold;" tabindex="0">🌿Direct Deposit Bank</div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1rem; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
-             tabindex="0">
-            <img src="https://via.placeholder.com/30" alt="User Image" style="border-radius: 50%;" />
-            <span style="font-weight: 500;">@userName</span>
+    <div class="top-header">
+        <div class="bank-logo" tabindex="0">🌿Direct Deposit Bank</div>
+        <div class="user-profile" tabindex="0">
+            <img src="https://via.placeholder.com/30" alt="User Image" class="profile-image" />
+            <span class="user-name">@userName</span>
         </div>
     </div>
  
-    <!-- Account Balance Card //ToDO LINK ACTUAL BALANCE TO ACCOUNTS HERE-->
-    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem;"
-             tabindex="0" @onkeydown="HandleSectionKeyDown" @ref="balanceSection" id="balance-section">
-        <h2 style="margin-top: 0; color: #2e7d6d;">💳 Balance </h2>
-        <div style="display: flex; flex-direction: column;">
-            <label for="from-account" style="font-weight: 500;">From Account</label>
+    <!-- Account Balance Card -->
+    <section class="panel balance-panel" tabindex="0" @onkeydown="HandleSectionKeyDown" @ref="balanceSection" id="balance-section">
+        <h2 class="panel-title">💳 Balance</h2>
+        <div class="form-group">
+            <label for="from-account" class="form-label">From Account</label>
             <select id="from-account" @bind="selectedAccount" @ref="accountSelect"
                     @onkeydown="HandleSelectKeyDown"
-                    style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem; @(focusedElement == "select" ? "outline: 3px solid #2e7d6d;" : "")">
+                    class="form-select @(focusedElement == "select" ? "focused" : "")">
                 <option value="checking">Checking</option>
                 <option value="savings">Savings</option>
             </select>
         </div>
-        <ul style="list-style: none; padding-left: 0; font-size: 1.2rem;">
+        <ul class="balance-info">
             <li>Balance: <strong>@GetBalanceDisplay()</strong></li>
         </ul>
     </section>
     
-    <!-- Recent Transactions Card //TODO LINK TO TRANSACTIONS HERE-->
-    <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-             tabindex="0" @onkeydown="HandleSectionKeyDown" @ref="transactionsSection" id="transactions-section">
-        <h3 style="margin-top: 0; color: #2e7d6d;">📋 Recent Transactions</h3>
-        <ul style="list-style: none; padding-left: 0;">
+    <!-- Recent Transactions Card -->
+    <section class="panel transactions-panel" tabindex="0" @onkeydown="HandleSectionKeyDown" @ref="transactionsSection" id="transactions-section">
+        <h3 class="panel-title">📋 Recent Transactions</h3>
+        <ul class="transaction-list">
             @for (int i = 0; i < recentTransactions.Count; i++)
             {
                 var txn = recentTransactions[i];
                 var index = i;
-                <li style="margin-bottom: 0.75rem; font-size: 1.1rem; padding: 0.5rem; border-radius: 0.5rem; @(focusedTransactionIndex == index ? "background-color: #f0f9f6; outline: 2px solid #2e7d6d;" : "")"
+                <li class="transaction-item @(focusedTransactionIndex == index ? "focused" : "")"
                     tabindex="@(focusedElement == "transactions" && focusedTransactionIndex == index ? 0 : -1)"
                     @ref="transactionRefs[i]"
                     @onkeydown="(e) => HandleTransactionKeyDown(e, index)"
                     @onclick="() => SelectTransaction(index)"
                     id="transaction-@index">
-                    <span style="font-size: 1.3rem;">@txn.Emoji</span>
-                    <span style="margin-left: 0.5rem;">@txn.Description</span> –
-                    <strong>@txn.Amount.ToString("C")</strong>
+                    <span class="transaction-emoji">@txn.Emoji</span>
+                    <span class="transaction-description">@txn.Description</span> –
+                    <strong class="transaction-amount">@txn.Amount.ToString("C")</strong>
                 </li>
             }
         </ul>
@@ -57,14 +56,12 @@
 
     @if (showTransactionDetails && focusedTransactionIndex >= 0 && focusedTransactionIndex < recentTransactions.Count)
     {
-        <div style="margin-top: 1rem; background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-             @ref="detailsPanel" tabindex="0" @onkeydown="HandleDetailsKeyDown">
-            <h3 style="color: #2e7d6d;">Transaction Details</h3>
+        <div class="panel details-panel" @ref="detailsPanel" tabindex="0" @onkeydown="HandleDetailsKeyDown">
+            <h3 class="panel-title">Transaction Details</h3>
             <p><strong>Type:</strong> @recentTransactions[focusedTransactionIndex].Emoji @recentTransactions[focusedTransactionIndex].Description</p>
             <p><strong>Amount:</strong> @recentTransactions[focusedTransactionIndex].Amount.ToString("C")</p>
             <p><strong>Date:</strong> April 10, 2025</p>
-            <button @onclick="CloseTransactionDetails" 
-                    style="background: #2e7d6d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
+            <button @onclick="CloseTransactionDetails" class="btn-primary">
                 Close
             </button>
         </div>
