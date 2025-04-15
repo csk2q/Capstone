@@ -3,44 +3,50 @@
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <div style="display: flex; flex-direction: row; gap: 2rem;">
 
-   
         <!-- Main Content -->
         <section style="flex: 1; display: flex; flex-direction: column; gap: 2rem;">
 
-<!-- TO DO THIS IS WHERE IT NEEDS HOOKED WITH THE ACCOUNTS AND DATABASE  -->
-
             <!-- Transfer Panel -->
-            <div style="@panelStyle">
+            <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 <h2 style="margin-top: 0; color: #2e7d6d;">💸 Transfer</h2>
-
-                <label for="from-account" style="@labelStyle">From Account</label>
-                <select id="from-account" @bind="fromAccount" style="@inputStyle">
+<!-- TO DO HOOK THE ACCOUNTS-->
+                <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">From Account</label>
+                <select id="from-account" @bind="fromAccount" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
                     <option value="checking">Checking</option>
                     <option value="savings">Savings</option>
                 </select>
 
-                <label for="to-account" style="@labelStyle">To Account</label>
-                <select id="to-account" @bind="toAccount" style="@inputStyle">
+                <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">To Account</label>
+                <select id="to-account" @bind="toAccount" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
                     <option value="john123">John - 123456</option>
                     <option value="jane456">Jane - 789012</option>
                     <option value="new">+ Add New</option>
                 </select>
 
-                <label for="memo" style="@labelStyle">Memo</label>
-                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." style="@inputStyle" />
+                <label for="memo" style="font-weight: 500; margin-top: 1rem; display: block;">Memo</label>
+                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
 
-                <button @onclick="SendTransfer" style="@transferButtonStyle">Send Money</button>
+                <button @onclick="SendTransfer" style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
+                    Send Money
+                </button>
             </div>
 
+<!-- TO DO MAKE FUNCTION BETWEEN ACCONUTS COULD ABANDON IF WE WANT-->
             <!-- Friends Panel -->
-            <div style="@panelStyle">
+            <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 <h3 style="margin-top: 0; color: #2e7d6d;">👥 Quick Send to Friends</h3>
                 <div style="display: flex; gap: 1rem;">
-                    <button style="@friendButtonStyle" @onclick="@(() => QuickSendTo("John"))">John</button>
-                    <button style="@friendButtonStyle" @onclick="@(() => QuickSendTo("Jane"))">Jane</button>
-                    <button style="@friendButtonStyle" @onclick="@(() => QuickSendTo("Ava"))">Ava</button>
+                    <button style="background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;"
+                            @onclick="@(() => QuickSendTo("John"))">John</button>
+
+                    <button style="background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;"
+                            @onclick="@(() => QuickSendTo("Jane"))">Jane</button>
+
+                    <button style="background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;"
+                            @onclick="@(() => QuickSendTo("Ava"))">Ava</button>
                 </div>
             </div>
+
         </section>
     </div>
 </main>
@@ -53,7 +59,7 @@
     private void SendTransfer()
     {
         Console.WriteLine($"Sending money from {fromAccount} to {toAccount} with memo: {memo}");
-        // You can wire this to an actual backend call later
+        //TO DO HERE  You can wire this to an actual backend call later
     }
 
     private void QuickSendTo(string friend)
@@ -62,18 +68,6 @@
         memo = $"Quick transfer to {friend}";
     }
 
-    private void NavigateTo(string url)
-    {
-        NavigationManager.NavigateTo(url);
-    }
-
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
-
-    // Styles as inline constants
-    private string navButtonStyle => "background-color: #2e7d6d; color: white; border: none; padding: 0.75rem; border-radius: 0.75rem; font-weight: bold; cursor: pointer;";
-    private string panelStyle => "background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);";
-    private string labelStyle => "font-weight: 500; margin-top: 1rem; display: block;";
-    private string inputStyle => "width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;";
-    private string transferButtonStyle => "margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;";
-    private string friendButtonStyle => "background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;";
 }
+

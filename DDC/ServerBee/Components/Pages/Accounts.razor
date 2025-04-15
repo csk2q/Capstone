@@ -5,32 +5,30 @@
     <h1 style="color: #2e7d6d; margin-bottom: 1.5rem;">🏦 My Accounts</h1>
 
     <section style="display: flex; flex-wrap: wrap; gap: 2rem;">
-        @foreach (var account in accounts)
-        {
-            <div style="@accountCardStyle">
-                <h2 style="margin: 0; color: #2e7d6d;">@account.Name</h2>
-                <p style="margin: 0.5rem 0;">Account #: ****@account.Last4</p>
-                <p style="font-size: 1.2rem; font-weight: bold;">Balance: @account.Balance.ToString("C")</p>
-            </div>
-        }
+        <div style="background: white; border-radius: 1rem; padding: 1.5rem; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; cursor: pointer;">
+            <h2 style="margin: 0; color: #2e7d6d;">Checking</h2>
+            <p style="margin: 0.5rem 0;">Account #: ****4321</p> <!--this is the line where
+            function calls need to be added for the accounts from the database
+            you may insert or delete boxes as desired to insert accounts-->
+            <p style="font-size: 1.2rem; font-weight: bold;">Balance: $135.00</p>
+        </div>
+
+        <div style="background: white; border-radius: 1rem; padding: 1.5rem; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; cursor: pointer;">
+            <h2 style="margin: 0; color: #2e7d6d;">Savings</h2>
+            <p style="margin: 0.5rem 0;">Account #: ****6789</p>
+            <p style="font-size: 1.2rem; font-weight: bold;">Balance: $500.00</p>
+        </div>
+
+        <div style="background: white; border-radius: 1rem; padding: 1.5rem; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; cursor: pointer;">
+            <h2 style="margin: 0; color: #2e7d6d;">Vacation Fund</h2>
+            <p style="margin: 0.5rem 0;">Account #: ****9876</p>
+            <p style="font-size: 1.2rem; font-weight: bold;">Balance: $1,200.75</p>
+        </div>
+
+        <div style="background: white; border-radius: 1rem; padding: 1.5rem; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; cursor: pointer;">
+            <h2 style="margin: 0; color: #2e7d6d;">Emergency</h2>
+            <p style="margin: 0.5rem 0;">Account #: ****2468</p>
+            <p style="font-size: 1.2rem; font-weight: bold;">Balance: $3,200.00</p>
+        </div>
     </section>
 </main>
-
-     <!--TO DO TO DO ADJUST FOR ACCOUNT CALLS -->
-@code {
-    private List<BankAccount> accounts = new()
-    {
-        new BankAccount("Checking", "4321", 135.00m),
-        new BankAccount("Savings", "6789", 500.00m),
-        new BankAccount("Vacation Fund", "9876", 1200.75m),
-        new BankAccount("Emergency", "2468", 3200.00m)
-    };
-
-    private record BankAccount(string Name, string Last4, decimal Balance);
-
-    private string accountCardStyle =>
-        "background: white; border-radius: 1rem; padding: 1.5rem; width: 280px;" +
-        "box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease;" +
-        "cursor: pointer;";
-
-}
