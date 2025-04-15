@@ -1,44 +1,69 @@
-﻿@page "/transfer"
+@page "/transfer"
+@using Microsoft.AspNetCore.Components.Web
+@inject IJSRuntime JSRuntime
 <!-- TODO PAGE LABEL WILL NEED EDITED TO MATCH WITHIN OUR CODEBASE  -->
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <div style="display: flex; flex-direction: row; gap: 2rem;">
-
    
         <!-- Main Content -->
         <section style="flex: 1; display: flex; flex-direction: column; gap: 2rem;">
-
 <!-- TO DO THIS IS WHERE IT NEEDS HOOKED WITH THE ACCOUNTS AND DATABASE  -->
-
             <!-- Transfer Panel -->
-            <div style="@panelStyle">
+            <div style="@panelStyle" tabindex="0" @ref="transferPanel" @onkeydown="HandleTransferPanelKeyDown">
                 <h2 style="margin-top: 0; color: #2e7d6d;">💸 Transfer</h2>
+                <div style="display: flex; flex-direction: column;">
+                    <label for="from-account" style="@labelStyle">From Account</label>
+                    <select id="from-account" @bind="fromAccount" @ref="fromAccountRef" 
+                            style="@GetInputStyle(focusedElement == "fromAccount")"
+                            @onkeydown="(e) => HandleSelectKeyDown(e, "fromAccount", "amount")">
+                        <option value="checking">Checking</option>
+                        <option value="savings">Savings</option>
+                    </select>
 
-                <label for="from-account" style="@labelStyle">From Account</label>
-                <select id="from-account" @bind="fromAccount" style="@inputStyle">
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
-                </select>
+                    <label for="to-account" style="@labelStyle">To Account</label>
+                    <select id="to-account" @bind="toAccount" @ref="toAccountRef"
+                            style="@GetInputStyle(focusedElement == "toAccount")"
+                            @onkeydown="(e) => HandleSelectKeyDown(e, "toAccount", "memo")">
+                        <option value="john123">John - 123456</option>
+                        <option value="jane456">Jane - 789012</option>
+                        <option value="new">+ Add New</option>
+                    </select>
 
-                <label for="to-account" style="@labelStyle">To Account</label>
-                <select id="to-account" @bind="toAccount" style="@inputStyle">
-                    <option value="john123">John - 123456</option>
-                    <option value="jane456">Jane - 789012</option>
-                    <option value="new">+ Add New</option>
-                </select>
+                    <label for="amount" style="@labelStyle">Amount ($)</label>
+                    <input type="number" id="amount" @bind="amount" placeholder="0.00" 
+                           @ref="amountRef"
+                           style="@GetInputStyle(focusedElement == "amount")"
+                           @onkeydown="(e) => HandleInputKeyDown(e, "amount", "fromAccount", "toAccount")" />
 
-                <label for="memo" style="@labelStyle">Memo</label>
-                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." style="@inputStyle" />
+                    <label for="memo" style="@labelStyle">Memo</label>
+                    <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." 
+                           @ref="memoRef"
+                           style="@GetInputStyle(focusedElement == "memo")"
+                           @onkeydown="(e) => HandleInputKeyDown(e, "memo", "toAccount", "transferButton")" />
 
-                <button @onclick="SendTransfer" style="@transferButtonStyle">Send Money</button>
+                    <button @onclick="SendTransfer" @ref="transferButtonRef"
+                            style="@GetButtonStyle(focusedElement == "transferButton")"
+                            @onkeydown="(e) => HandleButtonKeyDown(e, "transferButton", "memo", "quickSendPanel")">
+                        Send Money
+                    </button>
+                </div>
             </div>
-
+            
             <!-- Friends Panel -->
-            <div style="@panelStyle">
+            <div style="@panelStyle" tabindex="0" @ref="quickSendPanel" @onkeydown="HandleQuickSendPanelKeyDown">
                 <h3 style="margin-top: 0; color: #2e7d6d;">👥 Quick Send to Friends</h3>
                 <div style="display: flex; gap: 1rem;">
-                    <button style="@friendButtonStyle" @onclick="@(() => QuickSendTo("John"))">John</button>
-                    <button style="@friendButtonStyle" @onclick="@(() => QuickSendTo("Jane"))">Jane</button>
-                    <button style="@friendButtonStyle" @onclick="@(() => QuickSendTo("Ava"))">Ava</button>
+                    @for (int i = 0; i < friends.Length; i++)
+                    {
+                        var friend = friends[i];
+                        var index = i;
+                        <button style="@GetFriendButtonStyle(focusedElement == "friend" && focusedFriendIndex == index)"
+                                @ref="friendRefs[i]"
+                                @onclick="@(() => QuickSendTo(friend))"
+                                @onkeydown="(e) => HandleFriendButtonKeyDown(e, index)">
+                            @friend
+                        </button>
+                    }
                 </div>
             </div>
         </section>
@@ -49,17 +74,95 @@
     private string fromAccount = "checking";
     private string toAccount = "john123";
     private string memo = "";
+    private decimal amount = 0;
+    private string[] friends = { "John", "Jane", "Ava" };
+
+    // Keyboard navigation properties
+    private ElementReference transferPanel;
+    private ElementReference quickSendPanel;
+    private ElementReference fromAccountRef;
+    private ElementReference toAccountRef;
+    private ElementReference amountRef;
+    private ElementReference memoRef;
+    private ElementReference transferButtonRef;
+    private ElementReference[] friendRefs;
+    private string focusedElement = "";
+    private int focusedFriendIndex = -1;
+
+    protected override void OnInitialized()
+    {
+        friendRefs = new ElementReference[friends.Length];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Set initial focus to the transfer panel
+            await transferPanel.FocusAsync();
+            focusedElement = "transferPanel";
+        }
+    }
+
+    private async Task SetFocus(string elementName)
+    {
+        focusedElement = elementName;
+        StateHasChanged();
+
+        switch (elementName)
+        {
+            case "transferPanel":
+                await transferPanel.FocusAsync();
+                break;
+            case "fromAccount":
+                await fromAccountRef.FocusAsync();
+                break;
+            case "toAccount":
+                await toAccountRef.FocusAsync();
+                break;
+            case "amount":
+                await amountRef.FocusAsync();
+                break;
+            case "memo":
+                await memoRef.FocusAsync();
+                break;
+            case "transferButton":
+                await transferButtonRef.FocusAsync();
+                break;
+            case "quickSendPanel":
+                await quickSendPanel.FocusAsync();
+                break;
+            case "friend":
+                if (focusedFriendIndex >= 0 && focusedFriendIndex < friends.Length)
+                {
+                    await friendRefs[focusedFriendIndex].FocusAsync();
+                }
+                break;
+        }
+    }
 
     private void SendTransfer()
     {
-        Console.WriteLine($"Sending money from {fromAccount} to {toAccount} with memo: {memo}");
+        if (amount <= 0)
+        {
+            // Here you would normally show validation
+            return;
+        }
+        
+        Console.WriteLine($"Sending ${amount} from {fromAccount} to {toAccount} with memo: {memo}");
+        // Reset amount after successful transfer
+        amount = 0;
+        memo = "";
         // You can wire this to an actual backend call later
     }
 
-    private void QuickSendTo(string friend)
+    private async Task QuickSendTo(string friend)
     {
         toAccount = friend.ToLower() + "123";
         memo = $"Quick transfer to {friend}";
+        
+        // Focus back on the amount field to complete the transfer
+        await SetFocus("amount");
     }
 
     private void NavigateTo(string url)
@@ -68,6 +171,155 @@
     }
 
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+
+    // Keyboard navigation handlers
+    private async Task HandleTransferPanelKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+            case " ": // Space key
+                // Focus the first input in the panel
+                await SetFocus("fromAccount");
+                break;
+            case "ArrowDown":
+                await SetFocus("fromAccount");
+                break;
+        }
+    }
+
+    private async Task HandleSelectKeyDown(KeyboardEventArgs e, string current, string next)
+    {
+        switch (e.Key)
+        {
+            case "Tab":
+                // Browser handles tab navigation
+                break;
+            case "ArrowDown":
+                if (!e.AltKey)
+                {
+                    // Let the select handle its own dropdown
+                    break;
+                }
+                // Alt+ArrowDown opens the dropdown (browser behavior)
+                break;
+            case "Enter":
+                // Move to the next field
+                await SetFocus(next);
+                break;
+            case "Escape":
+                // Move back to the panel
+                await SetFocus("transferPanel");
+                break;
+        }
+    }
+
+    private async Task HandleInputKeyDown(KeyboardEventArgs e, string current, string prev, string next)
+    {
+        switch (e.Key)
+        {
+            case "ArrowUp":
+                await SetFocus(prev);
+                break;
+            case "ArrowDown":
+                await SetFocus(next);
+                break;
+            case "Enter":
+                if (current == "memo")
+                {
+                    await SetFocus("transferButton");
+                }
+                else
+                {
+                    await SetFocus(next);
+                }
+                break;
+            case "Escape":
+                await SetFocus("transferPanel");
+                break;
+        }
+    }
+
+    private async Task HandleButtonKeyDown(KeyboardEventArgs e, string current, string prev, string next)
+    {
+        switch (e.Key)
+        {
+            case "ArrowUp":
+                await SetFocus(prev);
+                break;
+            case "ArrowDown":
+                await SetFocus(next);
+                break;
+            case "Enter":
+            case " ": // Space key
+                SendTransfer();
+                break;
+            case "Escape":
+                await SetFocus("transferPanel");
+                break;
+        }
+    }
+
+    private async Task HandleQuickSendPanelKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+            case " ": // Space key
+                // Focus the first friend button
+                focusedFriendIndex = 0;
+                await SetFocus("friend");
+                break;
+            case "ArrowUp":
+                await SetFocus("transferButton");
+                break;
+            case "ArrowDown":
+                focusedFriendIndex = 0;
+                await SetFocus("friend");
+                break;
+        }
+    }
+
+    private async Task HandleFriendButtonKeyDown(KeyboardEventArgs e, int index)
+    {
+        switch (e.Key)
+        {
+            case "ArrowLeft":
+                if (index > 0)
+                {
+                    focusedFriendIndex = index - 1;
+                    await SetFocus("friend");
+                }
+                break;
+            case "ArrowRight":
+                if (index < friends.Length - 1)
+                {
+                    focusedFriendIndex = index + 1;
+                    await SetFocus("friend");
+                }
+                break;
+            case "ArrowUp":
+                await SetFocus("quickSendPanel");
+                break;
+            case "Enter":
+            case " ": // Space key
+                QuickSendTo(friends[index]);
+                break;
+            case "Escape":
+                await SetFocus("quickSendPanel");
+                break;
+        }
+    }
+
+    // Style methods with focus states
+    private string GetInputStyle(bool isFocused) => 
+        inputStyle + (isFocused ? " outline: 3px solid #2e7d6d; box-shadow: 0 0 8px rgba(46, 125, 109, 0.4);" : "");
+
+    private string GetButtonStyle(bool isFocused) => 
+        transferButtonStyle + (isFocused ? " outline: 3px solid #154b41; box-shadow: 0 0 8px rgba(46, 125, 109, 0.4);" : "");
+
+    private string GetFriendButtonStyle(bool isFocused) => 
+        friendButtonStyle + (isFocused ? " outline: 3px solid #2e7d6d; box-shadow: 0 0 8px rgba(46, 125, 109, 0.4);" : "");
 
     // Styles as inline constants
     private string navButtonStyle => "background-color: #2e7d6d; color: white; border: none; padding: 0.75rem; border-radius: 0.75rem; font-weight: bold; cursor: pointer;";

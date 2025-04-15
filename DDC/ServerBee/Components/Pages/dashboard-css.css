@@ -1,0 +1,140 @@
+/* Main Dashboard Styles */
+.dashboard-main {
+    background-color: #e6fff2;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+}
+
+/* Header Styles */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.bank-logo {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-image {
+    border-radius: 50%;
+}
+
+.user-name {
+    font-weight: 500;
+}
+
+/* Panel Styles */
+.panel {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.balance-panel {
+    margin-bottom: 2rem;
+}
+
+.details-panel {
+    margin-top: 1rem;
+}
+
+.panel-title {
+    margin-top: 0;
+    color: #2e7d6d;
+}
+
+/* Form Styles */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.form-select {
+    display: block;
+    margin: 0.5rem 0 1rem 0;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+}
+
+.form-select.focused {
+    outline: 3px solid #2e7d6d;
+}
+
+/* Balance Info */
+.balance-info {
+    list-style: none;
+    padding-left: 0;
+    font-size: 1.2rem;
+}
+
+/* Transaction List */
+.transaction-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.transaction-item {
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.transaction-item.focused {
+    background-color: #f0f9f6;
+    outline: 2px solid #2e7d6d;
+}
+
+.transaction-emoji {
+    font-size: 1.3rem;
+}
+
+.transaction-description {
+    margin-left: 0.5rem;
+}
+
+/* Button Styles */
+.btn-primary {
+    background: #2e7d6d;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #246355;
+}
+
+.btn-primary:focus {
+    outline: 3px solid #154b41;
+}
+
+/* Focus States */
+*:focus {
+    outline: 3px solid #2e7d6d;
+    outline-offset: 2px;
+}

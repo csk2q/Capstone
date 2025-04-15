@@ -1,22 +1,40 @@
-﻿@page "/moneyAccounts"
+@page "/moneyAccounts"
      <!-- TO DO PAGE NEEDS MATCHED HERE AS WELL,# ALL PAGES ON INTEGRATION -->
+@inject IJSRuntime JSRuntime
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <h1 style="color: #2e7d6d; margin-bottom: 1.5rem;">🏦 My Accounts</h1>
-
-    <section style="display: flex; flex-wrap: wrap; gap: 2rem;">
-        @foreach (var account in accounts)
+    <section style="display: flex; flex-wrap: wrap; gap: 2rem;" @onkeydown="HandleKeyDown" tabindex="0" @ref="accountsContainer">
+        @for (int i = 0; i < accounts.Count; i++)
         {
-            <div style="@accountCardStyle">
+            var account = accounts[i];
+            var index = i;
+            <div @ref="accountRefs[i]"
+                 style="@GetAccountCardStyle(index)"
+                 tabindex="@(index == selectedIndex ? 0 : -1)"
+                 @onclick="() => SelectAccount(index)"
+                 @onkeydown="(e) => HandleAccountKeyDown(e, index)"
+                 id="account-@index">
                 <h2 style="margin: 0; color: #2e7d6d;">@account.Name</h2>
                 <p style="margin: 0.5rem 0;">Account #: ****@account.Last4</p>
                 <p style="font-size: 1.2rem; font-weight: bold;">Balance: @account.Balance.ToString("C")</p>
             </div>
         }
     </section>
+    
+    @if (showDetails && selectedIndex >= 0 && selectedIndex < accounts.Count)
+    {
+        <div style="margin-top: 2rem; background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h2 style="color: #2e7d6d;">Account Details - @accounts[selectedIndex].Name</h2>
+            <p>Full account number: **** **** **** @accounts[selectedIndex].Last4</p>
+            <p>Current balance: @accounts[selectedIndex].Balance.ToString("C")</p>
+            <button @onclick="CloseDetails" style="background: #2e7d6d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
+                Close
+            </button>
+        </div>
+    }
 </main>
 
-     <!--TO DO TO DO ADJUST FOR ACCOUNT CALLS -->
 @code {
     private List<BankAccount> accounts = new()
     {
@@ -25,12 +43,119 @@
         new BankAccount("Vacation Fund", "9876", 1200.75m),
         new BankAccount("Emergency", "2468", 3200.00m)
     };
-
+    
     private record BankAccount(string Name, string Last4, decimal Balance);
-
-    private string accountCardStyle =>
-        "background: white; border-radius: 1rem; padding: 1.5rem; width: 280px;" +
-        "box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease;" +
-        "cursor: pointer;";
-
+    
+    private ElementReference accountsContainer;
+    private ElementReference[] accountRefs;
+    private int selectedIndex = -1;
+    private bool showDetails = false;
+    
+    protected override void OnInitialized()
+    {
+        accountRefs = new ElementReference[accounts.Count];
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Set initial focus to the container
+            await accountsContainer.FocusAsync();
+        }
+    }
+    
+    private string GetAccountCardStyle(int index)
+    {
+        string baseStyle = "background: white; border-radius: 1rem; padding: 1.5rem; width: 280px;" +
+                          "box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease;" +
+                          "cursor: pointer;";
+                          
+        // Add highlighted style for the selected account
+        if (index == selectedIndex)
+        {
+            baseStyle += "transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); outline: 3px solid #2e7d6d;";
+        }
+        
+        return baseStyle;
+    }
+    
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (accounts.Count == 0) return;
+        
+        switch (e.Key)
+        {
+            case "ArrowRight":
+            case "ArrowDown":
+                if (selectedIndex < accounts.Count - 1)
+                {
+                    await SelectAccount(selectedIndex + 1);
+                }
+                else
+                {
+                    // Wrap around to the first account
+                    await SelectAccount(0);
+                }
+                break;
+                
+            case "ArrowLeft":
+            case "ArrowUp":
+                if (selectedIndex > 0)
+                {
+                    await SelectAccount(selectedIndex - 1);
+                }
+                else
+                {
+                    // Wrap around to the last account
+                    await SelectAccount(accounts.Count - 1);
+                }
+                break;
+                
+            case "Home":
+                await SelectAccount(0);
+                break;
+                
+            case "End":
+                await SelectAccount(accounts.Count - 1);
+                break;
+        }
+    }
+    
+    private async Task HandleAccountKeyDown(KeyboardEventArgs e, int index)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+            case " ": // Space key
+                showDetails = true;
+                break;
+                
+            case "Escape":
+                if (showDetails)
+                {
+                    CloseDetails();
+                }
+                break;
+                
+            default:
+                // Let the container handle other navigation keys
+                await HandleKeyDown(e);
+                break;
+        }
+    }
+    
+    private async Task SelectAccount(int index)
+    {
+        selectedIndex = index;
+        StateHasChanged();
+        
+        // Focus the selected account card
+        await accountRefs[index].FocusAsync();
+    }
+    
+    private void CloseDetails()
+    {
+        showDetails = false;
+    }
 }
