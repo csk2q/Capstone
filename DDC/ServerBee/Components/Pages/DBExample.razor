@@ -1,0 +1,25 @@
+@page "/dbexample"
+
+@using ServerBee.Data.Models
+@using ServerBee.Services;
+
+@* Import the DbHelperService*@
+@inject DbHelperService dbHelper
+
+<h1>Recent transactions:</h1>
+<ul>
+    @if (userTransactions is not null)
+    @foreach (var transaction in userTransactions)
+    {
+        <li>@transaction.Date @transaction.Time -- $@transaction.Amount to @transaction.PayeePayerName (@transaction.PayeePayerAccountNumber)</li>
+    }
+</ul>
+
+@code {
+    private List<Transaction>? userTransactions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userTransactions = await dbHelper.GetTransactionHistoryAsync(50, 0);
+    }
+}

@@ -31,6 +31,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+builder.Services.AddScoped<DbHelperService>();
+
 // SignIn stuff?
 builder.Services.AddIdentityCore<ApplicationUser>(options =>{
     options.SignIn.RequireConfirmedAccount = true;
