@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ServerBee.Data;
 using ServerBee.Data.Models;
 
@@ -38,7 +39,7 @@ public class DbHelperService
     /// </summary>
     public async Task<bool> TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
     {
-        // Side-effects: Deduct from source, log transaction, add to target, log transaction
+        // Side-effects: Deduct from source, log withdraw, add to target, log deposit
         // TODO implement STUB
         return true;
     }
@@ -120,8 +121,8 @@ public class DbHelperService
     /// </summary>
     public async Task<List<Account>> GetMoneyAccountsAsync()
     {
-        // TODO implement STUB
-        return [];
+        var currentUser = await GetCurrentUserAsync();
+        return await dbContext.Accounts.Where(t => t.CustomerId == currentUser.CustomerId).ToListAsync();
     }
 
     /// <summary>
@@ -131,17 +132,22 @@ public class DbHelperService
     public async Task<List<Transaction>> GetTransactionHistoryAsync(int limit, int pageNumber)
     {
             var user = await GetCurrentUserAsync();
+            var accounts = await GetMoneyAccountsAsync();
+            if (accounts.Count < 1)
+                return [];
+            
+            var accountIds = accounts.Select(t => t.AccountId).ToList();
 
             return await dbContext.Transactions
-                .Where(t => t.AccountId == user.CustomerId)
+                .Where(t => accounts.Select(a => a.AccountId).Contains<int>((int)t.AccountId!))
                 .OrderByDescending(t => t.Date)
-                .ThenBy(t => t.Time)
+                .ThenByDescending(t => t.Time)
                 .Skip(pageNumber * limit)
                 .Take(limit)
                 .ToListAsync();
     }
 
-    private async Task<ApplicationUser> GetCurrentUserAsync()
+    public async Task<ApplicationUser> GetCurrentUserAsync()
     {
         var principal = httpContextAccessor.HttpContext?.User;
         ApplicationUser? user = null;
