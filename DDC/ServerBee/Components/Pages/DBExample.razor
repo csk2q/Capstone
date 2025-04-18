@@ -1,15 +1,34 @@
 @page "/dbexample"
 
+@using Microsoft.AspNetCore.Authorization
 @using ServerBee.Data.Models
 @using ServerBee.Services;
 
-@* Import the DbHelperService*@
 @inject DbHelperService dbHelper
+
+@attribute [Authorize]
+
+<PageTitle>DB testing</PageTitle>
+
+<EditForm FormName="DepositData" Model="@depositData" OnValidSubmit="DepositSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="input-container">
+        <label for="stringInput">Account Number:</label>
+        <InputText id="stringInput" @bind-Value="depositData!.accountName" required />
+    </div>
+    <div class="input-container">
+        <label for="decimalInput">Amount:</label>
+        <InputNumber id="decimalInput" @bind-Value="depositData!.amount" step="0.01" required />
+    </div>
+
+    <button type="submit">Submit</button>
+</EditForm>
 
 <h1>Recent transactions:</h1>
 <ul>
-    @if (userTransactions is not null)
-    @foreach (var transaction in userTransactions)
+    @foreach (var transaction in userTransactions ?? Enumerable.Empty<Transaction>())
     {
         <li>@transaction.Date @transaction.Time -- $@transaction.Amount to @transaction.PayeePayerName (@transaction.PayeePayerAccountNumber)</li>
     }
@@ -17,9 +36,22 @@
 
 @code {
     private List<Transaction>? userTransactions;
+    [SupplyParameterFromForm]
+    private DepositFormData? depositData { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         userTransactions = await dbHelper.GetTransactionHistoryAsync(50, 0);
     }
+
+    private async Task DepositSubmit()
+    {
+        await dbHelper.DepositAsync(depositData.accountName, depositData.amount);
+    }
+    public class DepositFormData
+    {
+        public decimal amount { get; set; }
+        public string accountName { get; set; }
+    }
+
 }
