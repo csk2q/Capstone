@@ -53,36 +53,15 @@ public class DbHelperService
     {
         // Side-effects: Add to account, log deposit transaction
         var currentUser = await GetCurrentUserAsync();
-        var userId = currentUser.CustomerId;
-
-        var accounts = dbContext.Accounts
-            .Where(t => t.CustomerId == userId & t.AccountNumber == accountNumber).ToList();
-        if (accounts.Count > 1)
-            throw new Exception($"Multiple accounts exist with ID '{accountNumber}' !");
-        else if (accounts.Count == 0)
-            throw new Exception($"No accounts exist with ID '{accountNumber}' !");
-        var account = accounts[0];
-
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+        
         // Add to account
         account.CurrentBalance += amount;
         dbContext.Update(account);
-
-        int transactionId = 0;
-        if (!dbContext.Transactions.IsNullOrEmpty())
-            transactionId = await dbContext.Transactions.Select(t => t.TransactionId).MaxAsync() + 1;
-
-        var depositTransaction = new Transaction
-        {
-            AccountId = account.AccountId,
-            Amount = amount,
-            Date = DateOnly.FromDateTime(DateTime.Now),
-            Time = TimeOnly.FromDateTime(DateTime.Now),
-            PayeePayerAccountNumber = accountNumber,
-            PayeePayerName = currentUser.UserName,
-            TransactionType = "Deposit",
-            TransactionId = transactionId
-        };
-        dbContext.Transactions.Add(depositTransaction);
+        
+        // Log deposit
+        var transaction =  await CreateTransactionAsync(account.AccountId, amount, "Deposit", currentUser.UserName, accountNumber);
+        dbContext.Transactions.Add(transaction);
         
         await dbContext.SaveChangesAsync();
     }
