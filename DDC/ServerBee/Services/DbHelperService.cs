@@ -141,8 +141,27 @@ public class DbHelperService
     public async Task<string> CreateAccountAsync(string accountType, decimal openingBalance)
     {
         // Side-effects: Create a new account in the system for the user
-        // TODO implement STUB
-        return "stub function";
+        var currentUser = await GetCurrentUserAsync();
+        
+        // Get new account id
+        int accountId = 0;
+        if (!dbContext.Accounts.IsNullOrEmpty())
+            accountId = await dbContext.Accounts.Select(t => t.AccountId).MaxAsync() + 1;
+        string accountNumber = "DDC" + (1000000 + accountId);
+        
+        var account = new Account()
+        {
+            CustomerId = currentUser.CustomerId,
+            AccountId = accountId,
+            AccountType = accountType,
+            AccountNumber = accountNumber,
+            CurrentBalance = openingBalance,
+            OpeningBalance = openingBalance
+        };
+        dbContext.Accounts.Add(account);
+
+        await dbContext.SaveChangesAsync();
+        return accountNumber;
     }
 
     /// <summary>
@@ -153,7 +172,16 @@ public class DbHelperService
     public async Task<bool> RemoveAccountAsync(string accountNumber)
     {
         // Side-effects: Remove account from system
-        // TODO implement STUB
+        var currentUser = await GetCurrentUserAsync();
+
+        var matchingAccounts = await dbContext.Accounts.Where(
+            a => a.CustomerId == currentUser.CustomerId && a.AccountNumber == accountNumber).ToListAsync();
+        
+        if (matchingAccounts.IsNullOrEmpty())
+            return false;
+        
+        dbContext.Accounts.RemoveRange(matchingAccounts);
+        await dbContext.SaveChangesAsync();
         return true;
     }
 
