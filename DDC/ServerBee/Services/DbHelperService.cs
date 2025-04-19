@@ -37,11 +37,13 @@ public class DbHelperService
     /// Preconditions: amount > 0, source account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
+    public async Task TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
     {
         // Side-effects: Deduct from source, log withdraw, add to target, log deposit
-        // TODO implement STUB
-        return true;
+        await Task.WhenAll([
+            WithdrawAsync(sourceAccountNumber, amount),
+            DepositAsync(targetAccountNumber, amount)
+        ]);
     }
 
     /// <summary>
@@ -71,11 +73,21 @@ public class DbHelperService
     /// Preconditions: amount > 0, account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> WithdrawAsync(string accountNumber, decimal amount)
+    public async Task WithdrawAsync(string accountNumber, decimal amount)
     {
         // Side-effects: Deduct from account, log withdrawal transaction
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+        // Deduct from account
+        account.CurrentBalance -= amount;
+        dbContext.Update(account);
+
+        // Log withdraw
+        var withdrawTransaction = await CreateTransactionAsync(account.AccountId, amount, "Withdraw", currentUser.UserName, accountNumber);
+        dbContext.Transactions.Add(withdrawTransaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -83,11 +95,21 @@ public class DbHelperService
     /// Preconditions: account belongs to current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> PayExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
+    public async Task PayExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
     {
         // Side-effects: Deduct from account, log withdrawal with external details
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+        // Add to account
+        account.CurrentBalance += amount;
+        dbContext.Update(account);
+        
+        // Log transaction
+        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount);
+        dbContext.Transactions.Add(transaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -95,11 +117,21 @@ public class DbHelperService
     /// Preconditions: account belongs to current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> ReceivePaymentExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
+    public async Task ReceivePaymentExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
     {
         // Side-effects: Add to account, log deposit with external details
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+        // Add to account
+        account.CurrentBalance += amount;
+        dbContext.Update(account);
+        
+        // Log transaction
+        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount);
+        dbContext.Transactions.Add(transaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
