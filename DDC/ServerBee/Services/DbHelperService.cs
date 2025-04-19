@@ -177,6 +177,8 @@ public class DbHelperService
                 .Take(limit)
                 .ToListAsync();
     }
+    
+    // --- Helper Methods --- //
 
     public async Task<ApplicationUser> GetCurrentUserAsync()
     {
@@ -187,6 +189,40 @@ public class DbHelperService
         if (user is null || principal is null)
             throw new ArgumentNullException("Function called while user is not sigined in. Ensure the user is authenticated/signed-in before calling.");
         return user;
+    }
+
+    public async Task<Account> GetMoneyAccountAsync(string accountNumber, ApplicationUser? currentUser = null)
+    {
+        if (currentUser is null)
+            currentUser = await GetCurrentUserAsync();
+        var userId = currentUser.CustomerId;
+
+        var accounts = dbContext.Accounts
+            .Where(t => t.CustomerId == userId & t.AccountNumber == accountNumber).ToList();
+        if (accounts.Count > 1)
+            throw new Exception($"Multiple accounts exist with ID '{accountNumber}' !");
+        else if (accounts.Count == 0)
+            throw new Exception($"No accounts exist with ID '{accountNumber}' !");
+        return accounts[0];
+    }
+    
+    private async Task<Transaction> CreateTransactionAsync(int accountId, decimal amount, string TransactionType, string PayeePayerName, string PayeePayerAccountNumber)
+    {   
+        int transactionId = 0;
+        if (!dbContext.Transactions.IsNullOrEmpty())
+            transactionId = await dbContext.Transactions.Select(t => t.TransactionId).MaxAsync() + 1;
+
+        return new Transaction
+        {
+            AccountId = accountId,
+            Amount = amount,
+            Date = DateOnly.FromDateTime(DateTime.Now),
+            Time = TimeOnly.FromDateTime(DateTime.Now),
+            PayeePayerAccountNumber = PayeePayerAccountNumber,
+            PayeePayerName = PayeePayerName,
+            TransactionType = TransactionType,
+            TransactionId = transactionId
+        };
     }
 }
 
