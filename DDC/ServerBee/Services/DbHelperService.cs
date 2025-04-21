@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ServerBee.Data;
 using ServerBee.Data.Models;
 
@@ -36,11 +37,13 @@ public class DbHelperService
     /// Preconditions: amount > 0, source account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
+    public async Task TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
     {
-        // Side-effects: Deduct from source, log transaction, add to target, log transaction
-        // TODO implement STUB
-        return true;
+        // Side-effects: Deduct from source, log withdraw, add to target, log deposit
+        await Task.WhenAll([
+            WithdrawAsync(sourceAccountNumber, amount),
+            DepositAsync(targetAccountNumber, amount)
+        ]);
     }
 
     /// <summary>
@@ -48,11 +51,21 @@ public class DbHelperService
     /// Preconditions: amount > 0, account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> DepositAsync(string accountNumber, decimal amount)
+    public async Task DepositAsync(string accountNumber, decimal amount)
     {
         // Side-effects: Add to account, log deposit transaction
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+        
+        // Add to account
+        account.CurrentBalance += amount;
+        dbContext.Update(account);
+        
+        // Log deposit
+        var transaction =  await CreateTransactionAsync(account.AccountId, amount, "Deposit", currentUser.UserName, accountNumber);
+        dbContext.Transactions.Add(transaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -60,11 +73,21 @@ public class DbHelperService
     /// Preconditions: amount > 0, account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> WithdrawAsync(string accountNumber, decimal amount)
+    public async Task WithdrawAsync(string accountNumber, decimal amount)
     {
         // Side-effects: Deduct from account, log withdrawal transaction
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+        // Deduct from account
+        account.CurrentBalance -= amount;
+        dbContext.Update(account);
+
+        // Log withdraw
+        var withdrawTransaction = await CreateTransactionAsync(account.AccountId, amount, "Withdraw", currentUser.UserName, accountNumber);
+        dbContext.Transactions.Add(withdrawTransaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -72,11 +95,21 @@ public class DbHelperService
     /// Preconditions: account belongs to current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> PayExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
+    public async Task PayExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
     {
         // Side-effects: Deduct from account, log withdrawal with external details
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+        // Add to account
+        account.CurrentBalance += amount;
+        dbContext.Update(account);
+        
+        // Log transaction
+        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount);
+        dbContext.Transactions.Add(transaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -84,11 +117,21 @@ public class DbHelperService
     /// Preconditions: account belongs to current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task<bool> ReceivePaymentExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
+    public async Task ReceivePaymentExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
     {
         // Side-effects: Add to account, log deposit with external details
-        // TODO implement STUB
-        return true;
+        var currentUser = await GetCurrentUserAsync();
+        var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+        // Add to account
+        account.CurrentBalance += amount;
+        dbContext.Update(account);
+        
+        // Log transaction
+        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount);
+        dbContext.Transactions.Add(transaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -98,8 +141,27 @@ public class DbHelperService
     public async Task<string> CreateAccountAsync(string accountType, decimal openingBalance)
     {
         // Side-effects: Create a new account in the system for the user
-        // TODO implement STUB
-        return "stub function";
+        var currentUser = await GetCurrentUserAsync();
+        
+        // Get new account id
+        int accountId = 0;
+        if (!dbContext.Accounts.IsNullOrEmpty())
+            accountId = await dbContext.Accounts.Select(t => t.AccountId).MaxAsync() + 1;
+        string accountNumber = "DDC" + (1000000 + accountId);
+        
+        var account = new Account()
+        {
+            CustomerId = currentUser.CustomerId,
+            AccountId = accountId,
+            AccountType = accountType,
+            AccountNumber = accountNumber,
+            CurrentBalance = openingBalance,
+            OpeningBalance = openingBalance
+        };
+        dbContext.Accounts.Add(account);
+
+        await dbContext.SaveChangesAsync();
+        return accountNumber;
     }
 
     /// <summary>
@@ -110,7 +172,16 @@ public class DbHelperService
     public async Task<bool> RemoveAccountAsync(string accountNumber)
     {
         // Side-effects: Remove account from system
-        // TODO implement STUB
+        var currentUser = await GetCurrentUserAsync();
+
+        var matchingAccounts = await dbContext.Accounts.Where(
+            a => a.CustomerId == currentUser.CustomerId && a.AccountNumber == accountNumber).ToListAsync();
+        
+        if (matchingAccounts.IsNullOrEmpty())
+            return false;
+        
+        dbContext.Accounts.RemoveRange(matchingAccounts);
+        await dbContext.SaveChangesAsync();
         return true;
     }
 
@@ -120,8 +191,8 @@ public class DbHelperService
     /// </summary>
     public async Task<List<Account>> GetMoneyAccountsAsync()
     {
-        // TODO implement STUB
-        return [];
+        var currentUser = await GetCurrentUserAsync();
+        return await dbContext.Accounts.Where(t => t.CustomerId == currentUser.CustomerId).ToListAsync();
     }
 
     /// <summary>
@@ -131,17 +202,24 @@ public class DbHelperService
     public async Task<List<Transaction>> GetTransactionHistoryAsync(int limit, int pageNumber)
     {
             var user = await GetCurrentUserAsync();
+            var accounts = await GetMoneyAccountsAsync();
+            if (accounts.Count < 1)
+                return [];
+            
+            var accountIds = accounts.Select(t => t.AccountId).ToList();
 
             return await dbContext.Transactions
-                .Where(t => t.AccountId == user.CustomerId)
+                .Where(t => accounts.Select(a => a.AccountId).Contains<int>((int)t.AccountId!))
                 .OrderByDescending(t => t.Date)
-                .ThenBy(t => t.Time)
+                .ThenByDescending(t => t.Time)
                 .Skip(pageNumber * limit)
                 .Take(limit)
                 .ToListAsync();
     }
+    
+    // --- Helper Methods --- //
 
-    private async Task<ApplicationUser> GetCurrentUserAsync()
+    public async Task<ApplicationUser> GetCurrentUserAsync()
     {
         var principal = httpContextAccessor.HttpContext?.User;
         ApplicationUser? user = null;
@@ -150,6 +228,40 @@ public class DbHelperService
         if (user is null || principal is null)
             throw new ArgumentNullException("Function called while user is not sigined in. Ensure the user is authenticated/signed-in before calling.");
         return user;
+    }
+
+    public async Task<Account> GetMoneyAccountAsync(string accountNumber, ApplicationUser? currentUser = null)
+    {
+        if (currentUser is null)
+            currentUser = await GetCurrentUserAsync();
+        var userId = currentUser.CustomerId;
+
+        var accounts = dbContext.Accounts
+            .Where(t => t.CustomerId == userId & t.AccountNumber == accountNumber).ToList();
+        if (accounts.Count > 1)
+            throw new Exception($"Multiple accounts exist with ID '{accountNumber}' !");
+        else if (accounts.Count == 0)
+            throw new Exception($"No accounts exist with ID '{accountNumber}' !");
+        return accounts[0];
+    }
+    
+    private async Task<Transaction> CreateTransactionAsync(int accountId, decimal amount, string TransactionType, string PayeePayerName, string PayeePayerAccountNumber)
+    {   
+        int transactionId = 0;
+        if (!dbContext.Transactions.IsNullOrEmpty())
+            transactionId = await dbContext.Transactions.Select(t => t.TransactionId).MaxAsync() + 1;
+
+        return new Transaction
+        {
+            AccountId = accountId,
+            Amount = amount,
+            Date = DateOnly.FromDateTime(DateTime.Now),
+            Time = TimeOnly.FromDateTime(DateTime.Now),
+            PayeePayerAccountNumber = PayeePayerAccountNumber,
+            PayeePayerName = PayeePayerName,
+            TransactionType = TransactionType,
+            TransactionId = transactionId
+        };
     }
 }
 

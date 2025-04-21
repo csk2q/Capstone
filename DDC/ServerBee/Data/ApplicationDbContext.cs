@@ -22,9 +22,8 @@ namespace ServerBee.Data
 
             modelBuilder.Entity<Account>(entity =>
             {
-                entity
-                    .HasNoKey()
-                    .ToTable("account");
+                entity.HasKey(e => e.AccountId);
+                entity.ToTable("account");
 
                 entity.Property(e => e.AccountId)
                     .ValueGeneratedOnAdd()
@@ -125,9 +124,8 @@ namespace ServerBee.Data
 
             modelBuilder.Entity<Transaction>(entity =>
             {
-                entity
-                    .HasNoKey()
-                    .ToTable("transaction");
+                entity.HasKey(e => e.TransactionId);
+                entity.ToTable("transaction");
 
                 entity.Property(e => e.AccountId).HasColumnName("account_id");
                 entity.Property(e => e.Amount)
