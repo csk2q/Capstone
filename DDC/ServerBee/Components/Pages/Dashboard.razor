@@ -2,6 +2,13 @@
 
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components
+@using ServerBee.Data.Models
+@using ServerBee.Services
+@using Microsoft.AspNetCore.Authorization
+
+@inject DbHelperService dbHelper
+
+@attribute [Authorize]
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <!-- Top Header -->
@@ -12,16 +19,18 @@
             <span style="font-weight: 500;">@userName</span>
         </div>
     </div>
- 
-    <!-- Account Balance Card //ToDO LINK ACTUAL BALANCE TO ACCOUNTS HERE-->
+
+    <!-- Account Balance Card -->
     <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 2rem;">
-        <h2 style="margin-top: 0; color: #2e7d6d;">💳 Balance </h2>
+        <h2 style="margin-top: 0; color: #2e7d6d;">💳 Balance</h2>
 
         <label for="from-account" style="font-weight: 500;">From Account</label>
         <select id="from-account" @bind="selectedAccount"
                 style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
-            <option value="checking">Checking</option>
-            <option value="savings">Savings</option>
+            @foreach (var acct in userAccounts)
+            {
+                <option value="@acct.AccountNumber">@acct.AccountType (@acct.AccountNumber)</option>
+            }
         </select>
 
         <ul style="list-style: none; padding-left: 0; font-size: 1.2rem;">
@@ -29,48 +38,64 @@
         </ul>
     </section>
 
-    <!-- Recent Transactions Card //TODO LINK TO TRANSACTIONS HERE-->
+    <!-- Recent Transactions Card -->
     <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
         <h3 style="margin-top: 0; color: #2e7d6d;">📋 Recent Transactions</h3>
 
         <ul style="list-style: none; padding-left: 0;">
-            @foreach (var txn in recentTransactions)
+            @if (recentTransactions != null)
             {
-                <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
-                    <span style="font-size: 1.3rem;">@txn.Emoji</span>
-                    <span style="margin-left: 0.5rem;">@txn.Description</span> –
-                    <strong>@txn.Amount.ToString("C")</strong>
-                </li>
+                @foreach (var txn in recentTransactions)
+                {
+                    <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
+                        <span style="font-size: 1.3rem;">@GetEmoji(txn.TransactionType ?? "")</span>
+                        <span style="margin-left: 0.5rem;">@txn.TransactionType to @txn.PayeePayerName</span> – 
+                        <strong>@(txn.Amount?.ToString("C") ?? "$0.00")</strong>
+
+                    </li>
+                }
+            }
+            else
+            {
+                <li>Loading...</li>
             }
         </ul>
     </section>
 </main>
 
 @code {
-    private string selectedAccount = "checking";
+    private string selectedAccount = "";
     private string userName = "User";
 
-    private Dictionary<string, decimal> accountBalances = new()
-    {
-        { "checking", 135.00m },
-        { "savings", 500.00m }
-    };
+    private List<Account> userAccounts = new();
+    private List<Transaction>? recentTransactions;
 
-    private List<Transaction> recentTransactions = new()
+    protected override async Task OnInitializedAsync()
     {
-        new Transaction("🛒", "Grocery", 135.00m),
-        new Transaction("💵", "Deposit", 350.00m),
-        new Transaction("🏧", "ATM Withdrawal", 18.00m)
-    };
+        userAccounts = await dbHelper.GetMoneyAccountsAsync() ?? new List<Account>();
+
+        if (userAccounts.Any())
+        {
+            selectedAccount = userAccounts.First().AccountNumber;
+        }
+
+        recentTransactions = await dbHelper.GetTransactionHistoryAsync(5, 0);
+    }
 
     private string GetBalanceDisplay()
     {
-        if (accountBalances.TryGetValue(selectedAccount, out var balance))
-        {
-            return balance.ToString("C");
-        }
-        return "$0.00";
-    }
+        var selected = userAccounts.FirstOrDefault(a => a.AccountNumber == selectedAccount);
+        return selected?.CurrentBalance != null
+    ? selected.CurrentBalance.Value.ToString("C")
+    : "$0.00";
+}
 
-    private record Transaction(string Emoji, string Description, decimal Amount);
+    private string GetEmoji(string? type) => (type ?? "").ToLower() switch
+    {
+        "deposit" => "💵",
+        "withdraw" => "🏧",
+        "transfer" => "🔁",
+        "purchase" => "🛒",
+        _ => "💸"
+    };
 }
