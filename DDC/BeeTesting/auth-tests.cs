@@ -6,8 +6,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
+using ServerBee;
 
-namespace ServerBee.Tests
+namespace BeeTesting.Tests
 {
     public class AuthTests : TestContext
     {
@@ -35,7 +36,7 @@ namespace ServerBee.Tests
             Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
             // Act
-            var cut = RenderComponent<ServerBee.Auth>();
+            var cut = RenderComponent<ServerBee.Components.Pages.Auth>();
             
             // Assert
             Assert.Contains("You are authenticated", cut.Markup);
@@ -55,7 +56,7 @@ namespace ServerBee.Tests
             Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
             // Act & Assert - component should throw an exception due to authorization failure
-            var exception = Assert.Throws<InvalidOperationException>(() => RenderComponent<ServerBee.Auth>());
+            var exception = Assert.Throws<InvalidOperationException>(() => RenderComponent<ServerBee.Components.Pages.Auth>());
             Assert.Contains("Authorization failed", exception.Message);
         }
         
@@ -72,7 +73,7 @@ namespace ServerBee.Tests
             Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
             // Act
-            var cut = RenderComponent<ServerBee.Auth>();
+            var cut = RenderComponent<ServerBee.Components.Pages.Auth>();
             
             // Assert
             Assert.Contains("You are authenticated", cut.Markup);
@@ -95,7 +96,7 @@ namespace ServerBee.Tests
             Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
             // Act
-            var cut = RenderComponent<ServerBee.Auth>();
+            var cut = RenderComponent<ServerBee.Components.Pages.Auth>();
             
             // Assert
             var pageTitle = cut.Find("PageTitle");
@@ -121,12 +122,12 @@ namespace ServerBee.Tests
         
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object resource, IEnumerable<IAuthorizationRequirement> requirements)
         {
-            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed(new[] { new AuthorizationFailure { Message = "Authorization failed" } }));
+            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed());
         }
         
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object resource, string policyName)
         {
-            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed(new[] { new AuthorizationFailure { Message = "Authorization failed" } }));
+            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed());
         }
     }
     
@@ -145,9 +146,4 @@ namespace ServerBee.Tests
         }
     }
 
-    // Added this class to support the test
-    public class AuthorizationFailure : IAuthorizationRequirement
-    {
-        public string Message { get; set; }
-    }
 }
