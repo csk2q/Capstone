@@ -1,5 +1,7 @@
 ﻿@page "/transfer"
-<!-- TODO PAGE LABEL WILL NEED EDITED TO MATCH WITHIN OUR CODEBASE  -->
+@using ServerBee.Data.Models
+@inject ServerBee.Services.DbHelperService DbHelperService
+
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <div style="display: flex; flex-direction: row; gap: 2rem;">
 
@@ -9,42 +11,41 @@
             <!-- Transfer Panel -->
             <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 <h2 style="margin-top: 0; color: #2e7d6d;">💸 Transfer</h2>
-<!-- TO DO HOOK THE ACCOUNTS-->
+
                 <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">From Account</label>
-                <select id="from-account" @bind="fromAccount" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
+                <select id="from-account" @bind="fromAccount"
+                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+                    @foreach (var acct in userAccounts)
+                    {
+                        <option value="@acct.AccountNumber">
+                            @acct.AccountType – @acct.AccountNumber
+                        </option>
+                    }
                 </select>
 
                 <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">To Account</label>
-                <select id="to-account" @bind="toAccount" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
-                    <option value="john123">John - 123456</option>
-                    <option value="jane456">Jane - 789012</option>
-                    <option value="new">+ Add New</option>
+                <select id="to-account" @bind="toAccount"
+                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+                    @foreach (var acct in userAccounts)
+                    {
+                        <option value="@acct.AccountNumber">
+                            @acct.AccountType – @acct.AccountNumber
+                        </option>
+                    }
                 </select>
 
                 <label for="memo" style="font-weight: 500; margin-top: 1rem; display: block;">Memo</label>
-                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
+                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..."
+                       style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
 
-                <button @onclick="SendTransfer" style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
+                <label for="amount" style="font-weight: 500; margin-top: 1rem; display: block;">Amount</label>
+                <input type="number" id="amount" @bind="amount" placeholder="0.00" step="0.01"
+                       style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
+
+                <button @onclick="SendTransfer"
+                        style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
                     Send Money
                 </button>
-            </div>
-
-<!-- TO DO MAKE FUNCTION BETWEEN ACCONUTS COULD ABANDON IF WE WANT-->
-            <!-- Friends Panel -->
-            <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <h3 style="margin-top: 0; color: #2e7d6d;">👥 Quick Send to Friends</h3>
-                <div style="display: flex; gap: 1rem;">
-                    <button style="background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;"
-                            @onclick="@(() => QuickSendTo("John"))">John</button>
-
-                    <button style="background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;"
-                            @onclick="@(() => QuickSendTo("Jane"))">Jane</button>
-
-                    <button style="background-color: #b2f0e6; border: none; padding: 0.75rem 1.25rem; border-radius: 999px; font-weight: 500; cursor: pointer;"
-                            @onclick="@(() => QuickSendTo("Ava"))">Ava</button>
-                </div>
             </div>
 
         </section>
@@ -52,22 +53,27 @@
 </main>
 
 @code {
-    private string fromAccount = "checking";
-    private string toAccount = "john123";
-    private string memo = "";
+    private List<Account> userAccounts = new();
+    private string fromAccount;
+    private string toAccount;
+    private string memo = string.Empty;
+    private decimal amount = 0m;
 
-    private void SendTransfer()
+    protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"Sending money from {fromAccount} to {toAccount} with memo: {memo}");
-        //TO DO HERE  You can wire this to an actual backend call later
+        userAccounts = await DbHelperService.GetMoneyAccountsAsync();
+        if (userAccounts.Any())
+        {
+            fromAccount = userAccounts.First().AccountNumber;
+            toAccount = userAccounts.Count > 1
+                ? userAccounts[1].AccountNumber
+                : userAccounts.First().AccountNumber;
+        }
     }
 
-    private void QuickSendTo(string friend)
+    private async Task SendTransfer()
     {
-        toAccount = friend.ToLower() + "123";
-        memo = $"Quick transfer to {friend}";
+        Console.WriteLine($"Transferring {amount:C} from {fromAccount} to {toAccount} memo='{memo}'");
+        await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount);
     }
-
-    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
 }
-
