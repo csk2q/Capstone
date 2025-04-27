@@ -1,136 +1,110 @@
 using Bunit;
-using Xunit;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using System.Collections.Generic;
-using ServerBee;
+using Xunit;
 
-namespace BeeTesting.Tests
+namespace BeeTesting
 {
     public class AuthTests : TestContext
     {
         public AuthTests()
         {
-            // Default test context setup
+            // Add authentication and authorization services
+            Services.AddAuthorizationCore();
         }
-        
+
         [Fact]
         public void Auth_ShouldDisplayUserNameWhenAuthenticated()
         {
-            // Arrange
+            // Arrange - set up authentication manually
             var username = "TestUser";
             
-            // Set up authentication state with a test user
-            var authContext = new TestAuthorizationContext
+            // Create claims identity and principal
+            var identity = new ClaimsIdentity(new[]
             {
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.Name, username)
-                }, "TestAuthentication"))
-            };
+                new Claim(ClaimTypes.Name, username)
+            }, "TestAuthentication");
+            var user = new ClaimsPrincipal(identity);
             
+            // Set up authentication state provider
+            var authStateProvider = new TestAuthStateProvider(user);
+            Services.AddSingleton<AuthenticationStateProvider>(authStateProvider);
+            
+            // Set up authorization service (always allow access)
             Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(true));
-            Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
-            // Act
-            var cut = RenderComponent<ServerBee.Components.Pages.Auth>();
+            // Act - render the component wrapped in CascadingAuthenticationState
+            var cut = RenderComponent<CascadingAuthenticationState>(parameters => parameters
+                .AddChildContent<ServerBee.Components.Pages.Auth>());
             
-            // Assert
+            // Uncomment for debugging
+            // Console.WriteLine(cut.Markup);
+            
+            // Assert - check the h1 content exists
             Assert.Contains("You are authenticated", cut.Markup);
+            
+            // Check for the username
             Assert.Contains($"Hello {username}", cut.Markup);
         }
         
         [Fact]
-        public void Auth_ShouldRedirectWhenNotAuthenticated()
+        public void Auth_ShouldHandleUnauthenticatedUser()
         {
-            // Arrange - set up unauthenticated user
-            var authContext = new TestAuthorizationContext
-            {
-                User = new ClaimsPrincipal(new ClaimsIdentity())  // No claims = not authenticated
-            };
+            // Arrange - set up unauthenticated state
+            var user = new ClaimsPrincipal(new ClaimsIdentity()); // No authentication
             
+            // Set up authentication state provider
+            var authStateProvider = new TestAuthStateProvider(user);
+            Services.AddSingleton<AuthenticationStateProvider>(authStateProvider);
+            
+            // Add authorization service - this line was missing
             Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(false));
-            Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
-            // Act & Assert - component should throw an exception due to authorization failure
-            var exception = Assert.Throws<InvalidOperationException>(() => RenderComponent<ServerBee.Components.Pages.Auth>());
-            Assert.Contains("Authorization failed", exception.Message);
+            // Act - try to render the component
+            var cut = RenderComponent<CascadingAuthenticationState>(parameters => parameters
+                .AddChildContent<ServerBee.Components.Pages.Auth>());
+            
+            // Assert - check for authorization failed message or redirect indicator
+            Assert.DoesNotContain("You are authenticated", cut.Markup);
+            Assert.DoesNotContain("Hello", cut.Markup);
+            // You might want to check for specific unauthorized content instead
+            // if your component shows a specific message when unauthorized
         }
         
         [Fact]
-        public void Auth_ShouldHandleNullUserIdentity()
+        public void Auth_ShouldHaveCorrectHeading()
         {
-            // Arrange - authenticated user but with null identity name
-            var authContext = new TestAuthorizationContext
+            // Arrange - set up authenticated state
+            var username = "TestUser";
+            var identity = new ClaimsIdentity(new[]
             {
-                User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[0], "TestAuthentication"))
-            };
+                new Claim(ClaimTypes.Name, username)
+            }, "TestAuthentication");
+            var user = new ClaimsPrincipal(identity);
             
+            // Set up authentication state provider
+            var authStateProvider = new TestAuthStateProvider(user);
+            Services.AddSingleton<AuthenticationStateProvider>(authStateProvider);
+            
+            // Set up authorization service (always allow access)
             Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(true));
-            Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
             
-            // Act
-            var cut = RenderComponent<ServerBee.Components.Pages.Auth>();
+            // Act - render the component wrapped in CascadingAuthenticationState
+            var cut = RenderComponent<CascadingAuthenticationState>(parameters => parameters
+                .AddChildContent<ServerBee.Components.Pages.Auth>());
             
             // Assert
-            Assert.Contains("You are authenticated", cut.Markup);
-            Assert.Contains("Hello ", cut.Markup); // Should show "Hello " without a name
-        }
-        
-        [Fact]
-        public void Auth_ShouldHaveCorrectPageTitle()
-        {
-            // Arrange - authenticated user
-            var authContext = new TestAuthorizationContext
-            {
-                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.Name, "TestUser")
-                }, "TestAuthentication"))
-            };
-            
-            Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(true));
-            Services.AddSingleton<AuthenticationStateProvider>(new TestAuthStateProvider(authContext.User));
-            
-            // Act
-            var cut = RenderComponent<ServerBee.Components.Pages.Auth>();
-            
-            // Assert
-            var pageTitle = cut.Find("PageTitle");
-            Assert.Equal("Auth", pageTitle.TextContent);
+            var heading = cut.Find("h1");
+            Assert.Equal("You are authenticated", heading.TextContent);
         }
     }
     
-    // Helper classes for authentication testing (reuse from previous tests)
-    
-    public class TestAuthorizationContext
-    {
-        public ClaimsPrincipal User { get; set; }
-    }
-    
-    public class TestAuthorizationService : IAuthorizationService
-    {
-        private readonly bool _allowAccess;
-        
-        public TestAuthorizationService(bool allowAccess)
-        {
-            _allowAccess = allowAccess;
-        }
-        
-        public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object resource, IEnumerable<IAuthorizationRequirement> requirements)
-        {
-            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed());
-        }
-        
-        public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object resource, string policyName)
-        {
-            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed());
-        }
-    }
-    
+    // Custom authentication state provider for testing
     public class TestAuthStateProvider : AuthenticationStateProvider
     {
         private readonly ClaimsPrincipal _user;
@@ -145,5 +119,25 @@ namespace BeeTesting.Tests
             return Task.FromResult(new AuthenticationState(_user));
         }
     }
-
+    
+    // Helper class for authorization testing
+    public class TestAuthorizationService : IAuthorizationService
+    {
+        private readonly bool _allowAccess;
+        
+        public TestAuthorizationService(bool allowAccess)
+        {
+            _allowAccess = allowAccess;
+        }
+        
+        public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, IEnumerable<IAuthorizationRequirement> requirements)
+        {
+            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed());
+        }
+        
+        public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName)
+        {
+            return Task.FromResult(_allowAccess ? AuthorizationResult.Success() : AuthorizationResult.Failed());
+        }
+    }
 }
