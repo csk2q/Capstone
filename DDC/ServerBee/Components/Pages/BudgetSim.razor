@@ -1,0 +1,98 @@
+@page "/budgetsim"
+@using System.Text.Json
+@inject HttpClient Http
+
+<h1 style="font-size: 24px; font-weight: 600; color: #333; margin-bottom: 15px;">AI Budget Simulator</h1>
+
+<p style="font-size: 14px; color: #555; margin-bottom: 20px;">
+    Enter your monthly budget details below, and get AI-generated advice on how to save more money.
+</p>
+
+<div style="max-width: 500px; width: 90%; margin: 50px auto; padding: 25px; background: #fff; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); border-radius: 12px;">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;">
+        @foreach (var field in Fields)
+        {
+            <label style="font-weight: 500; color: #444;">
+                @field.Label
+                <input @bind="@field.Value"
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;"
+                       type="number" />
+            </label>
+        }
+    </div>
+
+    <div style="grid-column: span 2; text-align: center; margin-top: 20px;">
+        <button @onclick="GetAdvice"
+                style="width: 100%; padding: 12px 15px; font-size: 16px; font-weight: 600; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            Get AI Advice
+        </button>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 15px; color: #333; font-weight: 500; text-align: left; box-shadow: 0px 3px 6px rgba(0,0,0,0.1);">
+        <strong>AI Budget Advice:</strong><br />
+        @Advice
+    </div>
+</div>
+
+@code {
+    public class BudgetField
+    {
+        public string Label { get; set; } = "";
+        public int Value { get; set; }
+    }
+
+    private string Advice = "Waiting for response...";
+
+    private List<BudgetField> Fields = new()
+    {
+        new BudgetField { Label = "Income:" },
+        new BudgetField { Label = "Housing:" },
+        new BudgetField { Label = "Electric:" },
+        new BudgetField { Label = "Internet:" },
+        new BudgetField { Label = "Gas:" },
+        new BudgetField { Label = "Water:" },
+        new BudgetField { Label = "Trash:" },
+        new BudgetField { Label = "Food:" },
+        new BudgetField { Label = "Leisure:" },
+        new BudgetField { Label = "Savings:" },
+        new BudgetField { Label = "Investments:" }
+    };
+
+    private async Task GetAdvice()
+    {
+        var input = new
+        {
+            Income = Fields[0].Value,
+            Housing = Fields[1].Value,
+            Electric = Fields[2].Value,
+            Internet = Fields[3].Value,
+            Gas = Fields[4].Value,
+            Water = Fields[5].Value,
+            Trash = Fields[6].Value,
+            Food = Fields[7].Value,
+            Leisure = Fields[8].Value,
+            Savings = Fields[9].Value,
+            Investments = Fields[10].Value
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("/api/budget-advice", input);
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+            if (json.TryGetProperty("advice", out var adviceProperty))
+            {
+                Advice = adviceProperty.GetString() ?? "No advice received.";
+            }
+            else
+            {
+                Advice = "⚠️ Response missing 'advice' field.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Advice = $"❌ Error: {ex.Message}";
+        }
+    }
+}

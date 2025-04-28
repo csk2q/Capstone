@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ServerBee.AIBudgetSim.Models;
+using Microsoft.Extensions.Configuration;
+
 
 namespace ServerBee.AIBudgetSim.Controllers
 {
