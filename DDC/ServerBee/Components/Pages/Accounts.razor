@@ -11,7 +11,7 @@
             @foreach (var acct in userAccounts)
             {
                 <div style="background: white; border-radius: 1rem; padding: 1.5rem; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s ease; cursor: pointer;">
-                    <h2 style="margin: 0; color: #2e7d6d;">@acct.AccountType</h2>
+                    <h2 style="margin: 0; color: #084b37;">@acct.AccountType</h2>
                     <p style="margin: 0.5rem 0;">Account #: ****@acct.AccountNumber.Substring(acct.AccountNumber.Length - 4)</p>
                     <p style="font-size: 1.2rem; font-weight: bold;">Balance: @($"{acct.CurrentBalance:C}")</p>
                 </div>
