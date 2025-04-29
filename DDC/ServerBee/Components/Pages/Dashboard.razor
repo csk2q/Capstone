@@ -93,12 +93,21 @@
     }
 
     private string GetBalanceDisplay()
+{
+    var selected = userAccounts
+        .FirstOrDefault(a => a.AccountNumber == selectedAccount);
+
+    if (selected?.CurrentBalance != null)
     {
-        var selected = userAccounts.FirstOrDefault(a => a.AccountNumber == selectedAccount);
-        return selected?.CurrentBalance != null
-            ? selected.CurrentBalance.Value.ToString("C")
-            : "$0.00";
+        // Format as plain number with two decimals, then prefix $
+        return "$" + selected.CurrentBalance.Value.ToString("F2");
     }
+    else
+    {
+        return "$0.00";
+    }
+}
+
 
     private string GetEmoji(string? type) => (type ?? "").ToLower() switch
     {
