@@ -196,6 +196,23 @@ public class DbHelperService
     }
 
     /// <summary>
+/// Retrieves recent transactions for a specific account owned by the current user.
+/// </summary>
+public async Task<List<Transaction>> GetRecentTransactionsForAccountAsync(string accountNumber, int limit = 5)
+{
+    var currentUser = await GetCurrentUserAsync();
+    var account = await GetMoneyAccountAsync(accountNumber, currentUser);
+
+    return await dbContext.Transactions
+        .Where(t => t.AccountId == account.AccountId)
+        .OrderByDescending(t => t.Date)
+        .ThenByDescending(t => t.Time)
+        .Take(limit)
+        .ToListAsync();
+}
+
+
+    /// <summary>
     /// Retrieves the transaction history for the current user.
     /// Output: Paginated, newest-to-oldest transactions for current user
     /// </summary>
