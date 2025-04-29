@@ -96,7 +96,7 @@
     {
         var selected = userAccounts.FirstOrDefault(a => a.AccountNumber == selectedAccount);
         return selected?.CurrentBalance != null
-            ? selected.CurrentBalance.Value.ToString("en-US")
+            ? selected.CurrentBalance.Value.ToString("C")
             : "$0.00";
     }
 
