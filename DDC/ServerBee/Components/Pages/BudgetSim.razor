@@ -78,7 +78,7 @@
 
         try
         {
-            var response = await Http.PostAsJsonAsync("/api/budget-advice", input);
+            var response = await Http.PostAsJsonAsync("api/budget-advice", input);
             var json = await response.Content.ReadFromJsonAsync<JsonElement>();
 
             if (json.TryGetProperty("advice", out var adviceProperty))
