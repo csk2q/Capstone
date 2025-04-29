@@ -40,10 +40,33 @@ public class DbHelperService
     public async Task TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
     {
         // Side-effects: Deduct from source, log withdraw, add to target, log deposit
-        await Task.WhenAll([
-            WithdrawAsync(sourceAccountNumber, amount),
-            DepositAsync(targetAccountNumber, amount)
-        ]);
+        var currentUser = await GetCurrentUserAsync();
+        
+        // Side-effects: Add to account, log deposit transaction
+        var sourceAccount = await GetMoneyAccountAsync(sourceAccountNumber, currentUser);
+        
+        // Add to account
+        sourceAccount.CurrentBalance += amount;
+        dbContext.Update(sourceAccount);
+        
+        // Log deposit
+        var transaction =  await CreateTransactionAsync(sourceAccount.AccountId, amount, "Deposit", currentUser.UserName, sourceAccountNumber);
+        dbContext.Transactions.Add(transaction);
+        
+        // Side-effects: Deduct from account, log withdrawal transaction
+        var targetAccount = await GetMoneyAccountAsync(targetAccountNumber, currentUser);
+
+        // Deduct from account
+        targetAccount.CurrentBalance -= amount;
+        dbContext.Update(targetAccount);
+        
+        await dbContext.SaveChangesAsync();
+
+        // Log withdraw
+        var withdrawTransaction = await CreateTransactionAsync(targetAccount.AccountId, amount, "Withdraw", currentUser.UserName, targetAccountNumber);
+        dbContext.Transactions.Add(withdrawTransaction);
+        
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
