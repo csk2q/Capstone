@@ -58,7 +58,7 @@
                     <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
                         <span style="font-size: 1.3rem;">@GetEmoji(txn.TransactionType ?? "")</span>
                         <span style="margin-left: 0.5rem;">@txn.TransactionType to @txn.PayeePayerName</span> – 
-                        <strong>@(txn.Amount?.ToString("C") ?? "$0.00")</strong>
+                        <strong>@("S" + txn.Amount?.ToString("F2") ?? "$0.00")</strong>
                     </li>
                 }
             }
