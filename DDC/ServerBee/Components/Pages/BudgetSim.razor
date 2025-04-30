@@ -32,7 +32,7 @@
 
     <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 15px; color: #333; font-weight: 500; text-align: left; box-shadow: 0px 3px 6px rgba(0,0,0,0.1);">
         <strong>AI Budget Advice:</strong><br />
-        @Advice
+        @PreAdvice
     </div>
 </div>
 
@@ -43,7 +43,8 @@
         public int Value { get; set; }
     }
 
-    private string Advice = "Waiting for response...";
+    private string PreAdvice = "Waiting for user input...";
+    private string Advice = "One moment please... AI Budget Bot is thinking... (May take up to 1 minute after clicking the button)";
 
     private List<BudgetField> Fields = new()
     {
@@ -81,6 +82,7 @@
         {
             var response = await Http.PostAsJsonAsync("https://ddcapstone.com/api/budget-advice", input);
             var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+            
 
             if (json.TryGetProperty("advice", out var adviceProperty))
             {
