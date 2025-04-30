@@ -1,7 +1,12 @@
-﻿@page "/moneyAccounts"
+@page "/Accounts"
+@using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @using ServerBee.Data.Models
+
+@attribute [Authorize]
+
 @inject ServerBee.Services.DbHelperService DbHelperService
+
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <h1 style="color: #084b37; margin-bottom: 1.5rem;">🏦 My Accounts</h1>

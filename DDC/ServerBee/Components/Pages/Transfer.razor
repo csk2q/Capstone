@@ -13,7 +13,7 @@
             <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 <h2 style="margin-top: 0; color: #084b37;"> Transfer</h2>
 
-                <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">From Account</label>
+                <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">Source Account</label>
                 <select id="from-account" @bind="fromAccount"
                         style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
                     @foreach (var acct in userAccounts)
@@ -23,17 +23,17 @@
                         </option>
                     }
                 </select>
-
-                <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">To Account</label>
-                <select id="to-account" @bind="toAccount"
-                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+                
+                <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">Destination Account</label>
+                <input type="text" @bind="toAccount" id="to-account" list="ownedAccounts" placeholder="Account number...">
+                <datalist id="ownedAccounts">
                     @foreach (var acct in userAccounts)
                     {
                         <option value="@acct.AccountNumber">
-                            @acct.AccountType – @acct.AccountNumber
+                            @acct.AccountNumber - @acct.AccountType
                         </option>
                     }
-                </select>
+                </datalist>
 
                 <label for="memo" style="font-weight: 500; margin-top: 1rem; display: block;">Memo</label>
                 <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..."
@@ -76,13 +76,13 @@
     protected override async Task OnInitializedAsync()
     {
         userAccounts = await DbHelperService.GetMoneyAccountsAsync();
-        if (userAccounts.Any())
-        {
-            fromAccount = userAccounts.First().AccountNumber;
-            toAccount = userAccounts.Count > 1
-                ? userAccounts[1].AccountNumber
-                : userAccounts.First().AccountNumber;
-        }
+        // if (userAccounts.Any())
+        // {
+        //     fromAccount = userAccounts.First().AccountNumber;
+        //     toAccount = userAccounts.Count > 1
+        //         ? userAccounts[1].AccountNumber
+        //         : userAccounts.First().AccountNumber;
+        // }
     }
 
     private async Task SendTransfer()
