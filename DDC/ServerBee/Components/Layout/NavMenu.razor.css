@@ -3,7 +3,7 @@
     cursor: pointer;
     width: 3.5rem;
     height: 2.5rem;
-    color: #2e7d6d;
+    color: #084b37;
     position: absolute;
     top: 0.5rem;
     right: 1rem;
@@ -18,7 +18,7 @@
 .top-row {
     min-height: 3.5rem;
     background-color: #e6fff2;
-    color: #2e7d6d;
+    color: #084b37;
 }
 
 .navbar-brand {
@@ -40,7 +40,7 @@
 }
 
 .nav-item ::deep .nav-link {
-    color: #2e7d6d;
+    color: #084b37;
     background: white;
     border-radius: 0.75rem;
     height: 3rem;
@@ -59,7 +59,7 @@
 
 .nav-item ::deep .nav-link:hover {
     background-color: rgba(46, 125, 109, 0.2);
-    color: #2e7d6d;
+    color: #084b37;
 }
 
 .nav-scrollable {
