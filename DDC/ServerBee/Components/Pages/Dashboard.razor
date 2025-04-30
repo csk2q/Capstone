@@ -25,8 +25,8 @@
         <h2 style="margin-top: 0; color: #084b37;">💳 Balance</h2>
 
         <label for="from-account" style="font-weight: 500;">From Account</label>
-        <select id="from-account" @bind="selectedAccount" @bind:after="LoadRecentTransactions"
-    style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+        <select id="from-account" @bind="selectedAccount"
+                style="display: block; margin: 0.5rem 0 1rem 0; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
             @foreach (var acct in userAccounts)
             {
                 <option value="@acct.AccountNumber">@acct.AccountType (@acct.AccountNumber)</option>
@@ -43,15 +43,7 @@
         <h3 style="margin-top: 0; color: #084b37;">📋 Recent Transactions</h3>
 
         <ul style="list-style: none; padding-left: 0;">
-            @if (recentTransactions == null)
-            {
-                <li>Loading...</li>
-            }
-            else if (recentTransactions.Count == 0)
-            {
-                <li>No recent transactions found.</li>
-            }
-            else
+            @if (recentTransactions != null)
             {
                 @foreach (var txn in recentTransactions)
                 {
@@ -62,13 +54,17 @@
                     </li>
                 }
             }
+            else
+            {
+                <li>Loading...</li>
+            }
         </ul>
     </section>
 </main>
 
 @code {
     private string selectedAccount = "";
-    private string userName = "User"; 
+    private string userName = "User";
 
     private List<Account> userAccounts = new();
     private List<Transaction>? recentTransactions;
@@ -80,16 +76,9 @@
         if (userAccounts.Any())
         {
             selectedAccount = userAccounts.First().AccountNumber;
-            await LoadRecentTransactions();
         }
-    }
 
-    private async Task LoadRecentTransactions()
-    {
-        if (!string.IsNullOrEmpty(selectedAccount))
-        {
-            recentTransactions = await dbHelper.GetRecentTransactionsForAccountAsync(selectedAccount);
-        }
+        recentTransactions = await dbHelper.GetTransactionHistoryAsync(5, 0);
     }
 
     private string GetBalanceDisplay()
