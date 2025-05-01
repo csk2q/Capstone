@@ -1,6 +1,7 @@
 @page "/budgetsim"
 @rendermode InteractiveServer
 @using System.Text.Json
+@using System.Net.Http.Json
 @inject HttpClient Http
 
 <h1 style="font-size: 24px; font-weight: 600; color: #333; margin-bottom: 15px;">AI Budget Simulator</h1>
@@ -16,7 +17,7 @@
         {
             <label style="font-weight: 500; color: #444;">
                 @field.Label
-                <input @bind="@field.Value"
+                <input @bind="field.Value"
                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;"
                        type="number" />
             </label>
@@ -32,20 +33,22 @@
 
     <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px; font-size: 15px; color: #333; font-weight: 500; text-align: left; box-shadow: 0px 3px 6px rgba(0,0,0,0.1);">
         <strong>AI Budget Advice:</strong><br />
-        @PreAdvice
+        @Advice
     </div>
 </div>
 
 @code {
+    // Holds the AI advice or loading/error messages
+    private string Advice = "Waiting for your numbers…";
+
+    // Represents a single input field
     public class BudgetField
     {
-        public string Label { get; set; } = "";
+        public string Label { get; set; } = string.Empty;
         public int Value { get; set; }
     }
 
-    private string PreAdvice = "Waiting for user input...";
-    private string Advice = "One moment please... AI Budget Bot is thinking... (May take up to 1 minute after clicking the button)";
-
+    // All budget input fields
     private List<BudgetField> Fields = new()
     {
         new BudgetField { Label = "Income:" },
@@ -63,30 +66,35 @@
 
     private async Task GetAdvice()
     {
+        // Show loading message immediately
+        Advice = "One moment please… AI Budget Bot is thinking… this may take up to 30 seconds.";
+        StateHasChanged();
+
+        // Build the input object
         var input = new
         {
-            Income = Fields[0].Value,
-            Housing = Fields[1].Value,
-            Electric = Fields[2].Value,
-            Internet = Fields[3].Value,
-            Gas = Fields[4].Value,
-            Water = Fields[5].Value,
-            Trash = Fields[6].Value,
-            Food = Fields[7].Value,
-            Leisure = Fields[8].Value,
-            Savings = Fields[9].Value,
+            Income      = Fields[0].Value,
+            Housing     = Fields[1].Value,
+            Electric    = Fields[2].Value,
+            Internet    = Fields[3].Value,
+            Gas         = Fields[4].Value,
+            Water       = Fields[5].Value,
+            Trash       = Fields[6].Value,
+            Food        = Fields[7].Value,
+            Leisure     = Fields[8].Value,
+            Savings     = Fields[9].Value,
             Investments = Fields[10].Value
         };
 
         try
         {
+            // Call the AI advice API
             var response = await Http.PostAsJsonAsync("https://ddcapstone.com/api/budget-advice", input);
-            var json = await response.Content.ReadFromJsonAsync<JsonElement>();
-            
+            var json     = await response.Content.ReadFromJsonAsync<JsonElement>();
 
-            if (json.TryGetProperty("advice", out var adviceProperty))
+            if (json.TryGetProperty("advice", out var advProp))
             {
-                Advice = adviceProperty.GetString() ?? "No advice received.";
+                Advice = advProp.GetString() ?? "No advice received.";
             }
             else
             {
