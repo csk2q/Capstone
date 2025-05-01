@@ -64,10 +64,9 @@ else
         var ok = await DbHelper.RemoveAccountAsync(model.AccountNumber!);
         if (ok)
         {
+            accounts = await DbHelper.GetMoneyAccountsAsync();
             feedback = $"Account {model.AccountNumber} deleted successfully.";
             feedbackClass = "alert-success";
-            await Task.Delay(1000);
-            Nav.NavigateTo("/Account/Manage");
         }
         else
         {
