@@ -1,7 +1,11 @@
 ﻿@page "/transfer"
 @rendermode InteractiveServer
+
+@using ServerBee.Data
 @using ServerBee.Data.Models
-@inject ServerBee.Services.DbHelperService DbHelperService
+
+@inject Services.DbHelperService DbHelperService
+@inject ILogger<Transfer> Logger
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <div style="display: flex; flex-direction: row; gap: 2rem;">
@@ -25,7 +29,7 @@
                 </select>
                 
                 <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">Destination Account</label>
-                <input type="text" @bind="toAccount" id="to-account" list="ownedAccounts" placeholder="Account number...">
+                <input type="text" @bind="toAccount" id="to-account" list="ownedAccounts" placeholder="Account number..." maxlength="250">
                 <datalist id="ownedAccounts">
                     @foreach (var acct in userAccounts)
                     {
@@ -93,7 +97,7 @@
     
     private List<Transaction>? recentTransactions;
 
-        // Feedback fields
+    // Feedback fields
     private string? transferStatus;
     private bool transferFailed;
 
@@ -116,11 +120,23 @@
 
     private async Task SendTransfer()
     {
-        Console.WriteLine($"Transferring {amount:C} from {fromAccount} to {toAccount} memo='{memo}'");
-        await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount);
+        // Block payments for zero or negative values 
+        if (amount <= 0)
+            return;
+
+        // Shorten to fit in db
+        if (memo.Length > 250)
+            memo = memo.Substring(0,250);
+
+        Logger.LogInformation($"Transferring {amount:C} from {fromAccount} to {toAccount} memo='{memo}'");
+
+        if (await DbHelperService.IsAccountInSystem(toAccount))
+            await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount, memo);
+        else
+            await DbHelperService.PayExternalAsync(fromAccount, amount, "EXTERNAL ACCOUNT", toAccount, memo);
     }
 
-        private string GetEmoji(string? type) => (type ?? "").ToLower() switch
+    private string GetEmoji(string? type) => (type ?? "").ToLower() switch
     {
         "deposit" => "💵",
         "withdraw" => "🏧",
