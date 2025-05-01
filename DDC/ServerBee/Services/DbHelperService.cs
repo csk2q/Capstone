@@ -7,10 +7,6 @@ using Microsoft.IdentityModel.Tokens;
 using ServerBee.Data;
 using ServerBee.Data.Models;
 
-// TODO remove this warning once all methods are implemented (also remove restore line at the end of the file)
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-
-
 namespace ServerBee.Services;
 
 /// <summary>
@@ -287,5 +283,3 @@ public class DbHelperService
         };
     }
 }
-
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
