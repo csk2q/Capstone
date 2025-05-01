@@ -38,11 +38,11 @@ else
             Delete selected account
         </button>
     </EditForm>
+}
 
-    @if (feedback is not null)
-    {
-        <div class="mt-3 alert @feedbackClass">@feedback</div>
-    }
+@if (feedback is not null)
+{
+    <div class="mt-3 alert @feedbackClass">@feedback</div>
 }
 
 @code {
