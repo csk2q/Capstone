@@ -47,7 +47,7 @@
                         style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
                     Send Money
                 </button>
-                 @* Status message *@
+                @* Status message *@
                 @if (transferStatus is not null)
                 {
                     <p style="margin-top: 1rem;
@@ -59,6 +59,28 @@
             </div>
 
         </section>
+        <!-- Recent Transactions Card -->
+        <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #084b37;">📋 Recent Transactions</h3>
+
+            <ul style="list-style: none; padding-left: 0;">
+                @if (recentTransactions != null)
+                {
+                    @foreach (var txn in recentTransactions)
+                    {
+                        <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
+                            <span style="font-size: 1.3rem;">@GetEmoji(txn.TransactionType ?? "")</span>
+                            <span style="margin-left: 0.5rem;">@txn.TransactionType to @txn.PayeePayerName</span> – 
+                            <strong>@("S" + txn.Amount?.ToString("F2") ?? "$0.00")</strong>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li>Loading...</li>
+                }
+            </ul>
+        </section>
     </div>
 </main>
 
@@ -68,6 +90,8 @@
     private string toAccount;
     private string memo = string.Empty;
     private decimal amount = 0m;
+    
+    private List<Transaction>? recentTransactions;
 
         // Feedback fields
     private string? transferStatus;
@@ -76,13 +100,18 @@
     protected override async Task OnInitializedAsync()
     {
         userAccounts = await DbHelperService.GetMoneyAccountsAsync();
-        // if (userAccounts.Any())
-        // {
-        //     fromAccount = userAccounts.First().AccountNumber;
-        //     toAccount = userAccounts.Count > 1
-        //         ? userAccounts[1].AccountNumber
-        //         : userAccounts.First().AccountNumber;
-        // }
+        var transactions = await DbHelperService.GetTransactionHistoryAsync(10, 0) ?? new List<Transaction>();
+        var timeCutOff = DateTime.Now.AddHours(-1);
+        foreach (Transaction transaction in transactions)
+        {
+            if (transaction.Date is not null && transaction.Time is not null)
+            {
+                var dateTime = ((DateOnly)transaction.Date).ToDateTime((TimeOnly)transaction.Time);
+                if (dateTime > timeCutOff)
+                    recentTransactions!.Add(transaction);
+            }
+        }
+        
     }
 
     private async Task SendTransfer()
@@ -90,4 +119,13 @@
         Console.WriteLine($"Transferring {amount:C} from {fromAccount} to {toAccount} memo='{memo}'");
         await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount);
     }
+
+        private string GetEmoji(string? type) => (type ?? "").ToLower() switch
+    {
+        "deposit" => "💵",
+        "withdraw" => "🏧",
+        "transfer" => "🔁",
+        "purchase" => "🛒",
+        _ => "💸"
+    };
 }
