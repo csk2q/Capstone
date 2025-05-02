@@ -1,11 +1,14 @@
 ﻿@page "/transfer"
 @rendermode InteractiveServer
 
+@using Microsoft.AspNetCore.Authorization
 @using ServerBee.Data
 @using ServerBee.Data.Models
 
 @inject Services.DbHelperService DbHelperService
 @inject ILogger<Transfer> Logger
+
+@attribute [Authorize]
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <div style="display: flex; flex-direction: row; gap: 2rem;">
