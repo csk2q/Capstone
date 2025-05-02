@@ -67,10 +67,41 @@
                 <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..."
                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
 
-                <label for="amount" style="font-weight: 500; margin-top: 1rem; display: block;">Amount</label>
-                <input type="number" id="amount" @bind="amount" placeholder="0.00" step="0.01"
-                       style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
+                <!-- Amount field with floating dollar sign -->
+<label for="amount" style="font-weight: 500; margin-top: 1rem; display: block;">
+    Amount
+</label>
+<div style="position: relative; margin-top: 0.25rem;">
+    <!-- dollar sign -->
+    <span
+        style="
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            color: #666;
+        ">
+        $
+    </span>
 
+    <!-- your input, padded left to clear the $ -->
+    <input
+        type="number"
+        id="amount"
+        @bind="amount"
+        placeholder="0.00"
+        step="0.01"
+        style="
+            width: 100%;
+            padding: 0.5rem;
+            padding-left: 1.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            box-sizing: border-box;
+        " />
+</div>
                 <button @onclick="SendTransfer"
                         style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
                     Send Money
