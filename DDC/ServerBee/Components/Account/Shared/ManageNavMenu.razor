@@ -3,42 +3,52 @@
 
 @inject SignInManager<ApplicationUser> SignInManager
 
-@* TODO NOTE: Remove/disable unneeded references and their associated files here.  *@
-
-
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
-
-    <li class="nav-item">
-        <NavLink class="nav-link" href="/Account/Manage/DeleteBankAcct">Delete Account</NavLink>
-    </li>
-    @if (hasExternalLogins)
-    {
+<div
+    style="
+        background-color: #e6fff2;
+        min-height: 100vh;
+        padding: 2rem;
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    ">
+    <ul class="nav nav-pills flex-column" style="width: 200px;">
         <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
+            <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">
+                Profile
+            </NavLink>
         </li>
-    }
-    @* <li class="nav-item"> *@
-    @*     <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink> *@
-    @* </li> *@
-    @* <li class="nav-item"> *@
-        @* <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink> *@
-    @* </li> *@
-</ul>
+        <li class="nav-item">
+            <NavLink class="nav-link" href="Account/Manage/Email">
+                Email
+            </NavLink>
+        </li>
+        <li class="nav-item">
+            <NavLink class="nav-link" href="Account/Manage/ChangePassword">
+                Password
+            </NavLink>
+        </li>
+       
+        @if (hasExternalLogins)
+        {
+            <li class="nav-item">
+                <NavLink class="nav-link" href="Account/Manage/ExternalLogins">
+                    External logins
+                </NavLink>
+            </li>
+        }
+    </ul>
+</div>
 
 @code {
     private bool hasExternalLogins;
 
     protected override async Task OnInitializedAsync()
     {
-        hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+        hasExternalLogins =
+            (await SignInManager.GetExternalAuthenticationSchemesAsync())
+            .Any();
     }
 }
