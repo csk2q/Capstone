@@ -18,8 +18,12 @@
             <label style="font-weight: 500; color: #444;">
                 @field.Label
                 <input @bind="field.Value"
-                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;"
-                       type="number" />
+                    type="number"
+                    min="0"
+                    max="9999999"
+                    step="1"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;"
+                />
             </label>
         }
     </div>
