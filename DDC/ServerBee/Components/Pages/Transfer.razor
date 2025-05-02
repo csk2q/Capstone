@@ -21,7 +21,7 @@
                 <h2 style="margin-top: 0; color: #084b37;"> Transfer</h2>
 
                 <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">Source Account</label>
-                <select id="from-account" @bind="fromAccount"
+                <InputSelect id="from-account" @bind-Value="fromAccount"
                         style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
                     @foreach (var acct in userAccounts)
                     {
@@ -29,17 +29,38 @@
                             @acct.AccountType – @acct.AccountNumber
                         </option>
                     }
-                </select>
+                </InputSelect>
                 
                 <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">Destination Account</label>
                 <input type="text" @bind="toAccount" id="to-account" list="ownedAccounts" placeholder="Account number..." maxlength="250">
                 <datalist id="ownedAccounts">
+                @if (userAccounts.Any())
+                {
                     @foreach (var acct in userAccounts)
                     {
-                        <option value="@acct.AccountNumber">
-                            @acct.AccountNumber - @acct.AccountType
-                        </option>
+                        bool isFirst = true;
+                        @if (isFirst)
+                        {
+                            <option value="@acct.AccountNumber" selected>
+                                @acct.AccountNumber - @acct.AccountType
+                            </option>
+                            isFirst = false;
+                        }
+                        else
+                        {
+                            <option value="@acct.AccountNumber">
+                                @acct.AccountNumber - @acct.AccountType
+                            </option>
+                        }
+                            
                     }
+                }
+                else
+                {
+                    <option value="" disabled="" selected="">
+                        You do not have an account with us yet, set up an account today on the accounts page!
+                    </option>
+                }
                 </datalist>
 
                 <label for="memo" style="font-weight: 500; margin-top: 1rem; display: block;">Memo</label>
@@ -98,7 +119,7 @@
     private string memo = string.Empty;
     private decimal amount = 0m;
     
-    private List<Transaction>? recentTransactions;
+    private List<Transaction> recentTransactions = new ();
 
     // Feedback fields
     private string? transferStatus;
@@ -107,6 +128,12 @@
     protected override async Task OnInitializedAsync()
     {
         userAccounts = await DbHelperService.GetMoneyAccountsAsync();
+        await UpdateRecentTransactions();
+    }
+
+    private async Task UpdateRecentTransactions()
+    {
+        recentTransactions = new List<Transaction>();
         var transactions = await DbHelperService.GetTransactionHistoryAsync(10, 0) ?? new List<Transaction>();
         var timeCutOff = DateTime.Now.AddHours(-1);
         foreach (Transaction transaction in transactions)
@@ -115,14 +142,21 @@
             {
                 var dateTime = ((DateOnly)transaction.Date).ToDateTime((TimeOnly)transaction.Time);
                 if (dateTime > timeCutOff)
-                    recentTransactions!.Add(transaction);
+                    recentTransactions.Add(transaction);
             }
         }
-        
     }
 
     private async Task SendTransfer()
     {
+        if(string.IsNullOrWhiteSpace(fromAccount) && userAccounts.Any())
+            fromAccount = userAccounts[0].AccountNumber;
+        else
+            throw new ArgumentException($"Source account was null or empty. SourceAccount='{toAccount}'");
+                
+        if (string.IsNullOrWhiteSpace(toAccount))
+            throw new ArgumentException($"Target account was null or empty. TargetAccount='{toAccount}'");
+        
         // Block payments for zero or negative values 
         if (amount <= 0)
             return;
@@ -137,6 +171,8 @@
             await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount, memo);
         else
             await DbHelperService.PayExternalAsync(fromAccount, amount, "EXTERNAL ACCOUNT", toAccount, memo);
+
+        await UpdateRecentTransactions();
     }
 
     private string GetEmoji(string? type) => (type ?? "").ToLower() switch
