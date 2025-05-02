@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
 @using ServerBee.Data
 @using ServerBee.Data.Models
 
@@ -120,6 +121,59 @@
             </div>
 
         </section>
+
+    <!-- New Deposit/Withdrawal Panel -->
+    <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: #084b37;">💰 New Transaction</h3>
+
+        <label for="txn-account" style="font-weight: 500; margin-top: 1rem; display: block;">
+            Select Account
+        </label>
+        <InputSelect id="txn-account" @bind-Value="transactionAccount"
+                     style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+            @foreach (var acct in userAccounts)
+            {
+                <option value="@acct.AccountNumber">
+                    @acct.AccountType – @acct.AccountNumber
+                </option>
+            }
+        </InputSelect>
+
+        <label for="txn-type" style="font-weight: 500; margin-top: 1rem; display: block;">
+            Transaction Type
+        </label>
+        <InputSelect id="txn-type" @bind-Value="transactionType"
+                     style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+            <option value="Deposit">Deposit</option>
+            <option value="Withdraw">Withdrawal</option>
+        </InputSelect>
+
+        <label for="txn-amount" style="font-weight: 500; margin-top: 1rem; display: block;">
+            Amount
+        </label>
+        <div style="position: relative; margin-top: 0.25rem;">
+            <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #666;">
+                $
+            </span>
+            <input type="number" id="txn-amount"
+                   @bind="transactionAmount"
+                   step="0.01" placeholder="0.00"
+                   style="width: 100%; padding: 0.5rem; padding-left: 1.75rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box;" />
+        </div>
+
+        <button @onclick="ProcessTransaction"
+                style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
+            Send Transaction
+        </button>
+
+        @if (transactionStatus is not null)
+        {
+            <p style="margin-top: 1rem; color: @(transactionFailed ? "crimson" : "green"); font-weight: 500;">
+                @transactionStatus
+            </p>
+        }
+    </div>
+
         <!-- Recent Transactions Card -->
         <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
             <h3 style="margin-top: 0; color: #084b37;">📋 Recent Transactions</h3>
@@ -164,6 +218,47 @@
     {
         userAccounts = await DbHelperService.GetMoneyAccountsAsync();
         await UpdateRecentTransactions();
+        if (userAccounts.Any())
+            transactionAccount = userAccounts[0].AccountNumber;
+    }
+      // New transaction fields
+    private string transactionAccount = string.Empty;
+    private string transactionType = "Deposit";
+    private decimal transactionAmount;
+    private string? transactionStatus;
+    private bool transactionFailed;
+
+    private async Task ProcessTransaction()
+    {
+        if (string.IsNullOrWhiteSpace(transactionAccount) && userAccounts.Any())
+            transactionAccount = userAccounts[0].AccountNumber;
+
+        if (transactionAmount <= 0)
+        {
+            transactionStatus = "Please enter an amount greater than zero.";
+            transactionFailed = true;
+            return;
+        }
+
+        try
+        {
+            if (transactionType == "Deposit")
+                await DbHelperService.DepositAsync(transactionAccount, transactionAmount);
+            else
+                await DbHelperService.WithdrawAsync(transactionAccount, transactionAmount);
+
+            transactionStatus = $"{transactionType} of {transactionAmount:C} completed successfully.";
+            transactionFailed = false;
+            transactionAmount = 0;
+
+            await UpdateRecentTransactions();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error processing transaction");
+            transactionStatus = "Transaction failed. Please try again.";
+            transactionFailed = true;
+        }
     }
 
     private async Task UpdateRecentTransactions()
