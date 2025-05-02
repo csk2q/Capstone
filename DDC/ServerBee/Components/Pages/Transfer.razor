@@ -282,10 +282,16 @@
         if(string.IsNullOrWhiteSpace(fromAccount) && userAccounts.Any())
             fromAccount = userAccounts[0].AccountNumber;
         else
-            throw new ArgumentException($"Source account was null or empty. SourceAccount='{toAccount}'");
+        {
+            transferStatus = $"Source account was null or empty. SourceAccount='{toAccount}'";
+            transferFailed = true;
+        }
                 
         if (string.IsNullOrWhiteSpace(toAccount))
-            throw new ArgumentException($"Target account was null or empty. TargetAccount='{toAccount}'");
+        {
+            transferStatus = $"Target account was null or empty. TargetAccount='{toAccount}'";
+            transferFailed = true;
+        }
         
         // Block payments for zero or negative values 
         if (amount <= 0)
@@ -295,14 +301,26 @@
         if (memo.Length > 250)
             memo = memo.Substring(0,250);
 
-        Logger.LogInformation($"Transferring {amount:C} from {fromAccount} to {toAccount} memo='{memo}'");
+        try
+        {
+            if (await DbHelperService.IsAccountInSystem(toAccount))
+                await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount, memo);
+            else
+                await DbHelperService.PayExternalAsync(fromAccount, amount, "EXTERNAL ACCOUNT", toAccount, memo);
 
-        if (await DbHelperService.IsAccountInSystem(toAccount))
-            await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount, memo);
-        else
-            await DbHelperService.PayExternalAsync(fromAccount, amount, "EXTERNAL ACCOUNT", toAccount, memo);
+            await UpdateRecentTransactions();
+            transferFailed = false;
+            transferStatus = $"Successfully transferred ${amount:F2} from {fromAccount} to {toAccount}.";
+            Logger.LogInformation($"Transferring ${amount:F2} from {fromAccount} to {toAccount} memo='{memo}'");
+        }
+        catch (Exception e)
+        {
+            transferFailed = true;
+            string errorId = (new Random()).NextInt64(100000000, 999999999).ToString();
+            transferStatus = $"Transfer failed. Error id {errorId}.\nPlease let the site administrator know about your issue and include the error id.";
+            Logger.LogError(e, $"Transfer error (id) when attempting to transfer ${amount:F2} from {fromAccount} to {toAccount} with memo '{memo}'");
+        }
 
-        await UpdateRecentTransactions();
     }
 
     private string GetEmoji(string? type) => (type ?? "").ToLower() switch
