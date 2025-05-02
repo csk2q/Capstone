@@ -19,7 +19,7 @@
 
             <!-- Transfer Panel -->
             <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <h2 style="margin-top: 0; color: #084b37;"> Transfer</h2>
+                <h2 style="margin-top: 0; color: #084b37;"> 💰 Transfer</h2>
 
                 <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">Source Account</label>
                 <InputSelect id="from-account" @bind-Value="fromAccount"
@@ -124,7 +124,7 @@
 
     <!-- New Deposit/Withdrawal Panel -->
     <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; color: #084b37;">💰 New Transaction</h3>
+        <h3 style="margin-top: 0; color: #084b37;"> Deposit or Withdraw Funds</h3>
 
         <label for="txn-account" style="font-weight: 500; margin-top: 1rem; display: block;">
             Select Account
@@ -247,7 +247,7 @@
             else
                 await DbHelperService.WithdrawAsync(transactionAccount, transactionAmount);
 
-            transactionStatus = $"{transactionType} of {transactionAmount:C} completed successfully.";
+            transactionStatus = $"{transactionType} of ${transactionAmount:F2} completed successfully.";
             transactionFailed = false;
             transactionAmount = 0;
 
