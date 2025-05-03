@@ -299,7 +299,7 @@
         if (amount <= 0)
         {
             transactionFailed = true;
-            transactionStatus = "Negative amounts are not permitee!"
+            transactionStatus = "Negative amounts are not permitee!";
             return;
         }
 
@@ -322,7 +322,7 @@
             transferFailed = false;
             transferStatus = $"Successfully transferred ${amount:F2} from {fromAccount} to {toAccount}.";
             if (memoWasShortened)
-                transactionStatus += "\n Note: Your memo too long and was shortened to 250 characters."
+                transactionStatus += "\n Note: Your memo too long and was shortened to 250 characters.";
             Logger.LogInformation($"Transferring ${amount:F2} from {fromAccount} to {toAccount} memo='{memo}'");
         }
         catch (Exception e)
