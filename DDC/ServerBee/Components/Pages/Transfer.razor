@@ -1,7 +1,15 @@
 ﻿@page "/transfer"
 @rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using ServerBee.Data
 @using ServerBee.Data.Models
-@inject ServerBee.Services.DbHelperService DbHelperService
+
+@inject Services.DbHelperService DbHelperService
+@inject ILogger<Transfer> Logger
+
+@attribute [Authorize]
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
     <div style="display: flex; flex-direction: row; gap: 2rem;">
@@ -11,10 +19,10 @@
 
             <!-- Transfer Panel -->
             <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <h2 style="margin-top: 0; color: #084b37;"> Transfer</h2>
+                <h2 style="margin-top: 0; color: #084b37;"> 💰 Transfer</h2>
 
                 <label for="from-account" style="font-weight: 500; margin-top: 1rem; display: block;">Source Account</label>
-                <select id="from-account" @bind="fromAccount"
+                <InputSelect id="from-account" @bind-Value="fromAccount"
                         style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
                     @foreach (var acct in userAccounts)
                     {
@@ -22,32 +30,86 @@
                             @acct.AccountType – @acct.AccountNumber
                         </option>
                     }
-                </select>
+                </InputSelect>
                 
                 <label for="to-account" style="font-weight: 500; margin-top: 1rem; display: block;">Destination Account</label>
-                <input type="text" @bind="toAccount" id="to-account" list="ownedAccounts" placeholder="Account number...">
+                <input type="text" @bind="toAccount" id="to-account" list="ownedAccounts" placeholder="Account number..." maxlength="250">
                 <datalist id="ownedAccounts">
+                @if (userAccounts.Any())
+                {
                     @foreach (var acct in userAccounts)
                     {
-                        <option value="@acct.AccountNumber">
-                            @acct.AccountNumber - @acct.AccountType
-                        </option>
+                        bool isFirst = true;
+                        @if (isFirst)
+                        {
+                            <option value="@acct.AccountNumber" selected>
+                                @acct.AccountNumber - @acct.AccountType
+                            </option>
+                            isFirst = false;
+                        }
+                        else
+                        {
+                            <option value="@acct.AccountNumber">
+                                @acct.AccountNumber - @acct.AccountType
+                            </option>
+                        }
+                            
                     }
+                }
+                else
+                {
+                    <option value="" disabled="" selected="">
+                        You do not have an account with us yet, set up an account today on the accounts page!
+                    </option>
+                }
                 </datalist>
 
                 <label for="memo" style="font-weight: 500; margin-top: 1rem; display: block;">Memo</label>
-                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..."
+                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." maxlength="250"
                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
 
-                <label for="amount" style="font-weight: 500; margin-top: 1rem; display: block;">Amount</label>
-                <input type="number" id="amount" @bind="amount" placeholder="0.00" step="0.01"
-                       style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
+                <!-- Amount field with floating dollar sign -->
 
+                
+<label for="amount" style="font-weight: 500; margin-top: 1rem; display: block;">
+    Amount
+</label>
+<div style="position: relative; margin-top: 0.25rem;">
+    <span
+        style="
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            color: #666;
+        ">
+        $
+    </span>
+
+    <input
+    type="number"
+    id="amount"
+    @bind-value="amount"
+    @bind-value:event="oninput"
+    step="0.01"
+    placeholder="0.00"
+    style="
+      width: 100%;
+      padding: 0.5rem;
+      padding-left: 1.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+    " />
+
+</div>
                 <button @onclick="SendTransfer"
                         style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
                     Send Money
                 </button>
-                 @* Status message *@
+                @* Status message *@
                 @if (transferStatus is not null)
                 {
                     <p style="margin-top: 1rem;
@@ -59,35 +121,226 @@
             </div>
 
         </section>
+
+    <!-- New Deposit/Withdrawal Panel -->
+    <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: #084b37;"> Deposit or Withdraw Funds</h3>
+
+        <label for="txn-account" style="font-weight: 500; margin-top: 1rem; display: block;">
+            Select Account
+        </label>
+        <InputSelect id="txn-account" @bind-Value="transactionAccount"
+                     style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+            @foreach (var acct in userAccounts)
+            {
+                <option value="@acct.AccountNumber">
+                    @acct.AccountType – @acct.AccountNumber
+                </option>
+            }
+        </InputSelect>
+
+        <label for="txn-type" style="font-weight: 500; margin-top: 1rem; display: block;">
+            Transaction Type
+        </label>
+        <InputSelect id="txn-type" @bind-Value="transactionType"
+                     style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;">
+            <option value="Deposit">Deposit</option>
+            <option value="Withdraw">Withdrawal</option>
+        </InputSelect>
+
+        <label for="txn-amount" style="font-weight: 500; margin-top: 1rem; display: block;">
+            Amount
+        </label>
+        <div style="position: relative; margin-top: 0.25rem;">
+            <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #666;">
+                $
+            </span>
+            <input type="number" id="txn-amount"
+                   @bind="transactionAmount"
+                   step="0.01" placeholder="0.00"
+                   style="width: 100%; padding: 0.5rem; padding-left: 1.75rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box;" />
+        </div>
+
+        <button @onclick="ProcessTransaction"
+                style="margin-top: 1.5rem; background-color: #2e7d6d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: bold; cursor: pointer;">
+            Send Transaction
+        </button>
+
+        @if (transactionStatus is not null)
+        {
+            <p style="margin-top: 1rem; color: @(transactionFailed ? "crimson" : "green"); font-weight: 500;">
+                @transactionStatus
+            </p>
+        }
+    </div>
+
+        <!-- Recent Transactions Card -->
+        <section style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #084b37;">📋 Recent Transactions</h3>
+
+            <ul style="list-style: none; padding-left: 0;">
+                @if (recentTransactions != null)
+                {
+                    @foreach (var txn in recentTransactions)
+                    {
+                        <li style="margin-bottom: 0.75rem; font-size: 1.1rem;">
+                            <span style="font-size: 1.3rem;">@GetEmoji(txn.TransactionType ?? "")</span>
+                            <span style="margin-left: 0.5rem;">@txn.TransactionType to @txn.PayeePayerName</span> – 
+                            <strong>@("$" + txn.Amount?.ToString("F2") ?? "$0.00")</strong>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li>Loading...</li>
+                }
+            </ul>
+        </section>
     </div>
 </main>
 
 @code {
     private List<Account> userAccounts = new();
-    private string fromAccount;
-    private string toAccount;
-    private string memo = string.Empty;
-    private decimal amount = 0m;
 
-        // Feedback fields
+    private string memo = string.Empty;
+
+    private string fromAccount = string.Empty;
+    private string toAccount   = string.Empty;
+    private decimal amount;
+    
+    private List<Transaction> recentTransactions = new ();
+
+    // Feedback fields
     private string? transferStatus;
     private bool transferFailed;
 
     protected override async Task OnInitializedAsync()
     {
         userAccounts = await DbHelperService.GetMoneyAccountsAsync();
-        // if (userAccounts.Any())
-        // {
-        //     fromAccount = userAccounts.First().AccountNumber;
-        //     toAccount = userAccounts.Count > 1
-        //         ? userAccounts[1].AccountNumber
-        //         : userAccounts.First().AccountNumber;
-        // }
+        await UpdateRecentTransactions();
+        if (userAccounts.Any())
+            transactionAccount = userAccounts[0].AccountNumber;
+    }
+      // New transaction fields
+    private string transactionAccount = string.Empty;
+    private string transactionType = "Deposit";
+    private decimal transactionAmount;
+    private string? transactionStatus;
+    private bool transactionFailed;
+
+    private async Task ProcessTransaction()
+    {
+        if (string.IsNullOrWhiteSpace(transactionAccount) && userAccounts.Any())
+            transactionAccount = userAccounts[0].AccountNumber;
+
+        if (transactionAmount <= 0)
+        {
+            transactionStatus = "Please enter an amount greater than zero.";
+            transactionFailed = true;
+            return;
+        }
+
+        try
+        {
+            if (transactionType == "Deposit")
+                await DbHelperService.DepositAsync(transactionAccount, transactionAmount);
+            else
+                await DbHelperService.WithdrawAsync(transactionAccount, transactionAmount);
+
+            transactionStatus = $"{transactionType} of ${transactionAmount:F2} completed successfully.";
+            transactionFailed = false;
+            transactionAmount = 0;
+
+            await UpdateRecentTransactions();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error processing transaction");
+            transactionStatus = "Transaction failed. Please try again.";
+            transactionFailed = true;
+        }
+    }
+
+    private async Task UpdateRecentTransactions()
+    {
+        recentTransactions = new List<Transaction>();
+        var transactions = await DbHelperService.GetTransactionHistoryAsync(10, 0) ?? new List<Transaction>();
+        var timeCutOff = DateTime.Now.AddHours(-1);
+        foreach (Transaction transaction in transactions)
+        {
+            if (transaction.Date is not null && transaction.Time is not null)
+            {
+                var dateTime = ((DateOnly)transaction.Date).ToDateTime((TimeOnly)transaction.Time);
+                if (dateTime > timeCutOff)
+                    recentTransactions.Add(transaction);
+            }
+        }
     }
 
     private async Task SendTransfer()
     {
-        Console.WriteLine($"Transferring {amount:C} from {fromAccount} to {toAccount} memo='{memo}'");
-        await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount);
+        if(string.IsNullOrWhiteSpace(fromAccount) && userAccounts.Any())
+            fromAccount = userAccounts[0].AccountNumber;
+        else
+        {
+            transferStatus = $"Source account was null or empty. SourceAccount='{toAccount}'";
+            transferFailed = true;
+            return;
+        }
+                
+        if (string.IsNullOrWhiteSpace(toAccount))
+        {
+            transferStatus = $"Target account was null or empty. TargetAccount='{toAccount}'";
+            transferFailed = true;
+            return;
+        }
+        
+        // Block payments for zero or negative values 
+        if (amount <= 0)
+        {
+            transactionFailed = true;
+            transactionStatus = "Negative amounts are not permitee!"
+            return;
+        }
+
+        // Shorten to fit in db
+        bool memoWasShortened = false;
+        if (memo.Length > 250)
+        {
+            memo = memo.Substring(0,250);
+            memoWasShortened = true;
+        }
+
+        try
+        {
+            if (await DbHelperService.IsAccountInSystem(toAccount))
+                await DbHelperService.TransferInternalAsync(fromAccount, toAccount, amount, memo);
+            else
+                await DbHelperService.PayExternalAsync(fromAccount, amount, "EXTERNAL ACCOUNT", toAccount, memo);
+
+            await UpdateRecentTransactions();
+            transferFailed = false;
+            transferStatus = $"Successfully transferred ${amount:F2} from {fromAccount} to {toAccount}.";
+            if (memoWasShortened)
+                transactionStatus += "\n Note: Your memo too long and was shortened to 250 characters."
+            Logger.LogInformation($"Transferring ${amount:F2} from {fromAccount} to {toAccount} memo='{memo}'");
+        }
+        catch (Exception e)
+        {
+            transferFailed = true;
+            string errorId = (new Random()).NextInt64(100000000, 999999999).ToString();
+            transferStatus = $"Transfer failed. Error id {errorId}.\nPlease let the site administrator know about your issue and include the error id.";
+            Logger.LogError(e, $"Transfer error (id) when attempting to transfer ${amount:F2} from {fromAccount} to {toAccount} with memo '{memo}'");
+        }
+
     }
+
+    private string GetEmoji(string? type) => (type ?? "").ToLower() switch
+    {
+        "deposit" => "💵",
+        "withdraw" => "🏧",
+        "transfer" => "🔁",
+        "purchase" => "🛒",
+        _ => "💸"
+    };
 }

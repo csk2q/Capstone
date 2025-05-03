@@ -20,4 +20,6 @@ public partial class Transaction
     public string? PayeePayerName { get; set; }
 
     public string? PayeePayerAccountNumber { get; set; }
+
+    public string? Memo { get; set; }
 }

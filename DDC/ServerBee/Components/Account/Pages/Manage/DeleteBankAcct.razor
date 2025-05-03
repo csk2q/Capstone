@@ -1,0 +1,83 @@
+@page "/Account/Manage/DeleteBankAcct"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@inject ServerBee.Services.DbHelperService DbHelper
+@inject NavigationManager Nav
+
+<h3 class="mb-4">Delete a Bank Account</h3>
+
+@if (accounts is null)
+{
+    <p>Loading your accounts…</p>
+}
+else if (!accounts.Any())
+{
+    <p>You don’t have any linked accounts to delete.</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="HandleDelete">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group mb-3">
+            <label for="accountSelect">Choose an account</label>
+            <InputSelect id="accountSelect" @bind-Value="model.AccountNumber" class="form-control">
+                <option value="">-- select --</option>
+                @foreach (var acct in accounts)
+                {
+                    <option value="@acct.AccountNumber">
+                        @acct.AccountNumber (@acct.CurrentBalance)
+                    </option>
+                }
+            </InputSelect>
+        </div>
+
+        <button type="submit" class="btn btn-danger"
+                disabled="@(string.IsNullOrEmpty(model.AccountNumber))">
+            Delete selected account
+        </button>
+    </EditForm>
+}
+
+@if (feedback is not null)
+{
+    <div class="mt-3 alert @feedbackClass">@feedback</div>
+}
+
+@code {
+    // Made these nullable so the compiler knows you handle 'accounts is null' above
+    private List<ServerBee.Data.Models.Account>? accounts;
+    private DeleteModel model = new();
+    private string? feedback;
+    private string? feedbackClass;
+
+    protected override async Task OnInitializedAsync()
+    {
+        accounts = await DbHelper.GetMoneyAccountsAsync();
+    }
+
+    // OnValidSubmit expects a Func<EditContext, Task>
+    private async Task HandleDelete(EditContext _)
+    {
+        // model.AccountNumber is non-null here because the form won't submit otherwise
+        var ok = await DbHelper.RemoveAccountAsync(model.AccountNumber!);
+        if (ok)
+        {
+            accounts = await DbHelper.GetMoneyAccountsAsync();
+            feedback = $"Account {model.AccountNumber} deleted successfully.";
+            feedbackClass = "alert-success";
+        }
+        else
+        {
+            feedback = $"Failed to delete account {model.AccountNumber}.";
+            feedbackClass = "alert-danger";
+        }
+    }
+
+    private class DeleteModel
+    {
+        [Required(ErrorMessage = "Please select an account")]
+        public string? AccountNumber { get; set; }
+    }
+}

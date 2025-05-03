@@ -143,6 +143,9 @@ namespace ServerBee.Data
                 entity.Property(e => e.TransactionType)
                     .HasMaxLength(50)
                     .HasColumnName("transaction_type");
+                entity.Property(e => e.Memo)
+                    .HasMaxLength(250)
+                    .HasColumnName("memo");
             });
 
             OnModelCreatingPartial(modelBuilder);

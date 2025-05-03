@@ -33,7 +33,7 @@ public class DbHelperService
     /// Preconditions: amount > 0, source account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount)
+    public async Task TransferInternalAsync(string sourceAccountNumber, string targetAccountNumber, decimal amount, string? memo = null)
     {
         // Side-effects: Deduct from source, log withdraw, add to target, log deposit
         var currentUser = await GetCurrentUserAsync();
@@ -46,7 +46,7 @@ public class DbHelperService
         dbContext.Update(sourceAccount);
         
         // Log deposit
-        var transaction =  await CreateTransactionAsync(sourceAccount.AccountId, amount, "Deposit", currentUser.UserName, sourceAccountNumber);
+        var transaction =  await CreateTransactionAsync(sourceAccount.AccountId, amount, "Deposit", currentUser.UserName, sourceAccountNumber, memo);
         dbContext.Transactions.Add(transaction);
         
         // Side-effects: Deduct from account, log withdrawal transaction
@@ -59,7 +59,7 @@ public class DbHelperService
         await dbContext.SaveChangesAsync();
 
         // Log withdraw
-        var withdrawTransaction = await CreateTransactionAsync(targetAccount.AccountId, amount, "Withdraw", currentUser.UserName, targetAccountNumber);
+        var withdrawTransaction = await CreateTransactionAsync(targetAccount.AccountId, amount, "Withdraw", currentUser.UserName, targetAccountNumber, memo);
         dbContext.Transactions.Add(withdrawTransaction);
         
         await dbContext.SaveChangesAsync();
@@ -70,7 +70,7 @@ public class DbHelperService
     /// Preconditions: amount > 0, account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task DepositAsync(string accountNumber, decimal amount)
+    public async Task DepositAsync(string accountNumber, decimal amount, string? memo = null)
     {
         // Side-effects: Add to account, log deposit transaction
         var currentUser = await GetCurrentUserAsync();
@@ -81,7 +81,7 @@ public class DbHelperService
         dbContext.Update(account);
         
         // Log deposit
-        var transaction =  await CreateTransactionAsync(account.AccountId, amount, "Deposit", currentUser.UserName, accountNumber);
+        var transaction =  await CreateTransactionAsync(account.AccountId, amount, "Deposit", currentUser.UserName, accountNumber, memo);
         dbContext.Transactions.Add(transaction);
         
         await dbContext.SaveChangesAsync();
@@ -92,7 +92,7 @@ public class DbHelperService
     /// Preconditions: amount > 0, account is owned by current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task WithdrawAsync(string accountNumber, decimal amount)
+    public async Task WithdrawAsync(string accountNumber, decimal amount, string? memo = null)
     {
         // Side-effects: Deduct from account, log withdrawal transaction
         var currentUser = await GetCurrentUserAsync();
@@ -103,7 +103,7 @@ public class DbHelperService
         dbContext.Update(account);
 
         // Log withdraw
-        var withdrawTransaction = await CreateTransactionAsync(account.AccountId, amount, "Withdraw", currentUser.UserName, accountNumber);
+        var withdrawTransaction = await CreateTransactionAsync(account.AccountId, amount, "Withdraw", currentUser.UserName, accountNumber, memo);
         dbContext.Transactions.Add(withdrawTransaction);
         
         await dbContext.SaveChangesAsync();
@@ -114,7 +114,7 @@ public class DbHelperService
     /// Preconditions: account belongs to current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task PayExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
+    public async Task PayExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount, string? memo = null)
     {
         // Side-effects: Deduct from account, log withdrawal with external details
         var currentUser = await GetCurrentUserAsync();
@@ -125,7 +125,7 @@ public class DbHelperService
         dbContext.Update(account);
         
         // Log transaction
-        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount);
+        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount, memo);
         dbContext.Transactions.Add(transaction);
         
         await dbContext.SaveChangesAsync();
@@ -136,7 +136,7 @@ public class DbHelperService
     /// Preconditions: account belongs to current user
     /// Output: true if successful, false otherwise
     /// </summary>
-    public async Task ReceivePaymentExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount)
+    public async Task ReceivePaymentExternalAsync(string accountNumber, decimal amount, string externalName, string externalAccount, string? memo = null)
     {
         // Side-effects: Add to account, log deposit with external details
         var currentUser = await GetCurrentUserAsync();
@@ -147,7 +147,7 @@ public class DbHelperService
         dbContext.Update(account);
         
         // Log transaction
-        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount);
+        var transaction = await CreateTransactionAsync(account.AccountId, amount, "Transfer from DDC", externalName, externalAccount, memo);
         dbContext.Transactions.Add(transaction);
         
         await dbContext.SaveChangesAsync();
@@ -264,7 +264,7 @@ public class DbHelperService
         return accounts[0];
     }
     
-    private async Task<Transaction> CreateTransactionAsync(int accountId, decimal amount, string TransactionType, string PayeePayerName, string PayeePayerAccountNumber)
+    private async Task<Transaction> CreateTransactionAsync(int accountId, decimal amount, string TransactionType, string PayeePayerName, string PayeePayerAccountNumber, string? memo)
     {   
         int transactionId = 0;
         if (!dbContext.Transactions.IsNullOrEmpty())
@@ -279,7 +279,13 @@ public class DbHelperService
             PayeePayerAccountNumber = PayeePayerAccountNumber,
             PayeePayerName = PayeePayerName,
             TransactionType = TransactionType,
-            TransactionId = transactionId
+            TransactionId = transactionId,
+            Memo = memo
         };
+    }
+
+    public async Task<bool> IsAccountInSystem(string accountNumber)
+    {
+        return await dbContext.Accounts.Where(a => a.AccountNumber == accountNumber).AnyAsync();
     }
 }
