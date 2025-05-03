@@ -65,7 +65,7 @@
                 </datalist>
 
                 <label for="memo" style="font-weight: 500; margin-top: 1rem; display: block;">Memo</label>
-                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..."
+                <input type="text" id="memo" @bind="memo" placeholder="Enter a memo..." maxlength="250"
                        style="width: 100%; padding: 0.5rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #ccc; font-size: 1rem;" />
 
                 <!-- Amount field with floating dollar sign -->
@@ -285,21 +285,31 @@
         {
             transferStatus = $"Source account was null or empty. SourceAccount='{toAccount}'";
             transferFailed = true;
+            return;
         }
                 
         if (string.IsNullOrWhiteSpace(toAccount))
         {
             transferStatus = $"Target account was null or empty. TargetAccount='{toAccount}'";
             transferFailed = true;
+            return;
         }
         
         // Block payments for zero or negative values 
         if (amount <= 0)
+        {
+            transactionFailed = true;
+            transactionStatus = "Negative amounts are not permitee!"
             return;
+        }
 
         // Shorten to fit in db
+        bool memoWasShortened = false;
         if (memo.Length > 250)
+        {
             memo = memo.Substring(0,250);
+            memoWasShortened = true;
+        }
 
         try
         {
@@ -311,6 +321,8 @@
             await UpdateRecentTransactions();
             transferFailed = false;
             transferStatus = $"Successfully transferred ${amount:F2} from {fromAccount} to {toAccount}.";
+            if (memoWasShortened)
+                transactionStatus += "\n Note: Your memo too long and was shortened to 250 characters."
             Logger.LogInformation($"Transferring ${amount:F2} from {fromAccount} to {toAccount} memo='{memo}'");
         }
         catch (Exception e)
