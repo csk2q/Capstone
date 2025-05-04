@@ -43,10 +43,12 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>{
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-// Mail
-// builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-// builder.Services.AddTransient<IEmailSender, EmailSender>();
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, EmailSender>();
+// Mail configuration
+string? sendgridKey = Environment.GetEnvironmentVariable("SENDGRID_KEY");
+if (string.IsNullOrEmpty(sendgridKey))
+    builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+else
+    builder.Services.AddSingleton<IEmailSender<ApplicationUser>, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
 // Configure sign in options. Also configured on the log in page
@@ -88,6 +90,10 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// Log warning if sendgrid key is not found.
+if (string.IsNullOrEmpty(sendgridKey))
+    logger.LogWarning("Environment variable 'SENDGRID_KEY' not set, falling back to IdentityNoOpEmailSender.");
 
 /* Apply database migrations on startup.
  * Note that this is not recommended for production but can be useful for local development.
