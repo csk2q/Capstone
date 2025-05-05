@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
+<div class="page" style="background-color: #e6fff2; min-height: 100vh; font-family: 'Segoe UI', sans-serif; color: #333;">
+
     <AuthorizeView>
         <Authorized>
             <div class="sidebar">
@@ -9,20 +10,19 @@
         </Authorized>
     </AuthorizeView>
 
-    <main>
-        <div class="top-row px-4">
+    <main style="padding: 2rem;">
+        <div class="top-row px-4" style="margin-bottom: 1rem;">
             <AuthorizeView>
                 <Authorized>
                     <p><span>@context.User.Identity?.Name</span></p>
                 </Authorized>
                 <NotAuthorized>
-                    <a href="https://github.com/csk2q/Capstone">Github</a>
+                    <a href="https://github.com/csk2q/Capstone" style="color: #084b37; font-weight: 600;">GitHub</a>
                 </NotAuthorized>
             </AuthorizeView>
-            
         </div>
 
-        <article class="content px-4">
+        <article class="content px-4" style="background: white; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 2rem;">
             @Body
         </article>
     </main>
