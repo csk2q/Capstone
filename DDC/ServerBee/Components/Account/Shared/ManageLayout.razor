@@ -1,17 +1,21 @@
 ﻿@inherits LayoutComponentBase
 @layout ServerBee.Components.Layout.MainLayout
 
-<h1>Manage your account</h1>
+<main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
 
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
-        <div class="col-lg-3">
-            <ManageNavMenu />
-        </div>
-        <div class="col-lg-9">
-            @Body
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem;">Manage your account</h1>
+
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">Change your account settings</h2>
+        <hr style="border-color: #ccc;" />
+        <div class="row">
+            <div class="col-lg-3">
+                <ManageNavMenu />
+            </div>
+            <div class="col-lg-9">
+                @Body
+            </div>
         </div>
     </div>
-</div>
+
+</main>
