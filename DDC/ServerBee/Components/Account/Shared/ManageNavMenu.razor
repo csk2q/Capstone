@@ -14,32 +14,36 @@
         justify-content: center;
         align-items: center;
     ">
-    <ul class="nav nav-pills flex-column" style="width: 200px;">
+    <ul class="nav flex-column" style="width: 200px; gap: 1rem;">
+    <li class="nav-item">
+        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All"
+                 style="background: #084b37; color: white; padding: 0.75rem 1rem; border-radius: 0.75rem; font-weight: 600; display: block; text-align: center;">
+            Profile
+        </NavLink>
+    </li>
+    <li class="nav-item">
+        <NavLink class="nav-link" href="Account/Manage/Email"
+                 style="background: #084b37; color: white; padding: 0.75rem 1rem; border-radius: 0.75rem; font-weight: 600; display: block; text-align: center;">
+            Email
+        </NavLink>
+    </li>
+    <li class="nav-item">
+        <NavLink class="nav-link" href="Account/Manage/ChangePassword"
+                 style="background: #084b37; color: white; padding: 0.75rem 1rem; border-radius: 0.75rem; font-weight: 600; display: block; text-align: center;">
+            Password
+        </NavLink>
+    </li>
+    @if (hasExternalLogins)
+    {
         <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">
-                Profile
+            <NavLink class="nav-link" href="Account/Manage/ExternalLogins"
+                     style="background: #084b37; color: white; padding: 0.75rem 1rem; border-radius: 0.75rem; font-weight: 600; display: block; text-align: center;">
+                External logins
             </NavLink>
         </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/Email">
-                Email
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ChangePassword">
-                Password
-            </NavLink>
-        </li>
-       
-        @if (hasExternalLogins)
-        {
-            <li class="nav-item">
-                <NavLink class="nav-link" href="Account/Manage/ExternalLogins">
-                    External logins
-                </NavLink>
-            </li>
-        }
-    </ul>
+    }
+</ul>
+
 </div>
 
 @code {
