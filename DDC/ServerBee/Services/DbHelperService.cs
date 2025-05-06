@@ -41,25 +41,25 @@ public class DbHelperService
         // Side-effects: Add to account, log deposit transaction
         var sourceAccount = await GetMoneyAccountAsync(sourceAccountNumber, currentUser);
         
-        // Add to account
-        sourceAccount.CurrentBalance += amount;
+        // Deduct to account
+        sourceAccount.CurrentBalance -= amount;
         dbContext.Update(sourceAccount);
         
         // Log deposit
-        var transaction =  await CreateTransactionAsync(sourceAccount.AccountId, amount, "Deposit", currentUser.UserName, sourceAccountNumber, memo);
+        var transaction =  await CreateTransactionAsync(sourceAccount.AccountId, amount, "Withdraw", currentUser.UserName, sourceAccountNumber, memo);
         dbContext.Transactions.Add(transaction);
         
         // Side-effects: Deduct from account, log withdrawal transaction
         var targetAccount = await GetMoneyAccountAsync(targetAccountNumber, currentUser);
 
-        // Deduct from account
-        targetAccount.CurrentBalance -= amount;
+        // Add from account
+        targetAccount.CurrentBalance += amount;
         dbContext.Update(targetAccount);
         
         await dbContext.SaveChangesAsync();
 
         // Log withdraw
-        var withdrawTransaction = await CreateTransactionAsync(targetAccount.AccountId, amount, "Withdraw", currentUser.UserName, targetAccountNumber, memo);
+        var withdrawTransaction = await CreateTransactionAsync(targetAccount.AccountId, amount, "Deposit", currentUser.UserName, targetAccountNumber, memo);
         dbContext.Transactions.Add(withdrawTransaction);
         
         await dbContext.SaveChangesAsync();
