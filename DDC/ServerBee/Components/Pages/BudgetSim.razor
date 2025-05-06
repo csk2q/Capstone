@@ -1,8 +1,11 @@
 @page "/budgetsim"
 @rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
 @using System.Text.Json
 @using System.Net.Http.Json
 @inject HttpClient Http
+
+@attribute [Authorize]
 
 <main style="background-color: #e6fff2; min-height: 100vh; padding: 2rem; font-family: 'Segoe UI', sans-serif; color: #333;">
 
