@@ -40,7 +40,7 @@ namespace BeeTesting
             
             // Act - render the component wrapped in CascadingAuthenticationState
             var cut = RenderComponent<CascadingAuthenticationState>(parameters => parameters
-                .AddChildContent<ServerBee.Components.Pages.Auth>());
+                .AddChildContent<ServerBee.Components.OldPages.Auth>());
             
             // Uncomment for debugging
             // Console.WriteLine(cut.Markup);
@@ -67,7 +67,7 @@ namespace BeeTesting
             
             // Act - try to render the component
             var cut = RenderComponent<CascadingAuthenticationState>(parameters => parameters
-                .AddChildContent<ServerBee.Components.Pages.Auth>());
+                .AddChildContent<ServerBee.Components.OldPages.Auth>());
             
             // Assert - check for authorization failed message or redirect indicator
             Assert.DoesNotContain("You are authenticated", cut.Markup);
@@ -96,7 +96,7 @@ namespace BeeTesting
             
             // Act - render the component wrapped in CascadingAuthenticationState
             var cut = RenderComponent<CascadingAuthenticationState>(parameters => parameters
-                .AddChildContent<ServerBee.Components.Pages.Auth>());
+                .AddChildContent<ServerBee.Components.OldPages.Auth>());
             
             // Assert
             var heading = cut.Find("h1");
