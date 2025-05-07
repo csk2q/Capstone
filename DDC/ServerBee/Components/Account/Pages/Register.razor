@@ -4,7 +4,9 @@
 @using System.Text
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity.EntityFrameworkCore
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.EntityFrameworkCore
 @using ServerBee.Data
 
 @inject UserManager<ApplicationUser> UserManager
@@ -14,6 +16,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject ApplicationDbContext DbContext
 
 <PageTitle>Register</PageTitle>
 
@@ -61,6 +64,12 @@
     public async Task RegisterUser(EditContext editContext)
     {
         var user = CreateUser();
+
+        //Set customer Id
+        int customerId = 0;
+        if (DbContext.Users.Any())
+            customerId = ((int)await DbContext.Users.Select(t => t.CustomerId).MaxAsync()) + 1;
+        user.CustomerId = customerId;
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
         var emailStore = GetEmailStore();
