@@ -1,0 +1,49 @@
+name: DDC
+
+services:
+  asp:
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: mydatabase
+      OPENAI_API_KEY: <insert your key here>
+      SENDGRID_KEY: <insert your key here>
+      # ASPNETCORE_ENVIRONMENT: Development # WARNING: Do NOT enable/uncomment in production
+      MIGRATE_DB_ON_STARTUP: true
+    build: 
+      context: ./DDC/
+      dockerfile: ./ServerBee/Dockerfile
+    ports:
+     - 8070:8080
+     - 5433:5432
+    volumes:
+     - aspKeys:/home/app/.aspnet/
+
+
+  ## Uncomment if you are using cloudflare tunnel
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate run --token <insert your token here>
+
+  postgres:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: mydatabase
+    ports:
+      - 5444:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+
+volumes:
+  aspKeys:
+  postgres_data:
+    # name: my_postgres_data
