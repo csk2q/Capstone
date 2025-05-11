@@ -51,6 +51,8 @@ docker compose up --build --detach
 
 ### Development
 
+To run in development you will need to download and install the [.NET SDK v9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) to your computer.
+
 First start the postgres database, by opening a terminal in the DDC folder and running the following.
 ```sh
 docker compose --file pgsql-compose.yml up --detach
